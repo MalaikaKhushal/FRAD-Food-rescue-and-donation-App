@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'screens/splashscreen.dart';
+import 'screens/landingpage.dart';
 
 void main() {
   runApp(const FRADApp());
@@ -13,8 +14,7 @@ class FRADApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'FRAD',
-      initialRoute: '/',
-      routes: {'/': (context) => const SplashScreen()},
+      home: const LandingScreen(),
     );
   }
 }
