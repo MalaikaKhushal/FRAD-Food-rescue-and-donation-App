@@ -1,48 +1,37 @@
 import 'package:flutter/material.dart';
 
-class LandingScreen extends StatelessWidget {
-  const LandingScreen({super.key});
+// ─────────────────────────────────────────────────────────────
+//  FRAD – Landing Page  (landingpage.dart)
+//  Place this file in:  lib/screens/landingpage.dart
+// ─────────────────────────────────────────────────────────────
 
-  static const Color primaryOrange = Color(0xffC75B12);
-  static const Color amber = Color(0xffF59E0B);
-  static const Color lightBg = Color(0xffFFFBF5);
-  static const Color cardBg = Color(0xffFFFFFF);
+class LandingPage extends StatelessWidget {
+  const LandingPage({super.key});
+
+  // ── Brand colors (same as SplashScreen) ──
+  static const Color primary   = Color(0xffC75B12);
+  static const Color amber     = Color(0xffF59E0B);
+  static const Color lightGold = Color(0xffFFD89B);
+  static const Color bgLight   = Color(0xffFFFBF5);
+  static const Color cardWhite = Color(0xffFFFFFF);
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: lightBg,
-      body: SafeArea(
+      backgroundColor: bgLight,
+      body: SingleChildScrollView(
         child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 16),
-                    _HeroSection(),
-                    const SizedBox(height: 20),
-                    _StatsRow(),
-                    const SizedBox(height: 20),
-                    _SectionHeader(title: 'Nearby Food', onSeeAll: () {}),
-                    const SizedBox(height: 10),
-                    _FoodListings(),
-                    const SizedBox(height: 20),
-                    _SectionHeader(title: 'Quick Actions'),
-                    const SizedBox(height: 10),
-                    _QuickActions(),
-                    const SizedBox(height: 20),
-                    _CharitySection(),
-                    const SizedBox(height: 20),
-                    _AddFoodButton(),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
-            ),
-            _BottomNavBar(),
+          children: const [
+            _AppHeader(),
+            _HeroBanner(),
+            _ProvidersSection(),
+            _HowItWorks(),
+            _KeyFeatures(),
+            _ImpactStats(),
+            _AboutUs(),
+            _ContactUs(),
+            _PortalsSection(),
+            _Footer(),
           ],
         ),
       ),
@@ -50,165 +39,165 @@ class LandingScreen extends StatelessWidget {
   }
 }
 
-// ─── Hero ────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  SECTION 1 – App Header
+// ══════════════════════════════════════════════════════════════
+class _AppHeader extends StatelessWidget {
+  const _AppHeader();
 
-class _HeroSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.only(top: 52, bottom: 18, left: 20, right: 20),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xffC75B12), Color(0xffF59E0B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.95),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(Icons.food_bank_rounded,
+                size: 30, color: Color(0xffC75B12)),
+          ),
+          const SizedBox(width: 12),
+          const Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('FRAD',
+                  style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 2)),
+              Text('Food Rescue & Donation App',
+                  style: TextStyle(fontSize: 11, color: Colors.white70)),
+              Text('Save Food • Save Money • Help Communities',
+                  style: TextStyle(
+                      fontSize: 10,
+                      color: Colors.white60,
+                      fontStyle: FontStyle.italic)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SECTION 2 – Hero Banner
+// ══════════════════════════════════════════════════════════════
+class _HeroBanner extends StatelessWidget {
+  const _HeroBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 36),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [Color(0xffC75B12), Color(0xffF59E0B), Color(0xffFFD89B)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xffC75B12).withOpacity(0.35),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Stack(
         children: [
+          // Decorative circles
           Positioned(
-            top: -50,
-            right: -50,
+            top: -40, right: -40,
             child: Container(
-              width: 160,
-              height: 160,
+              width: 130, height: 130,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.10),
-                shape: BoxShape.circle,
-              ),
+                  color: Colors.white.withOpacity(0.10),
+                  shape: BoxShape.circle),
             ),
           ),
           Positioned(
-            bottom: -60,
-            left: -60,
+            bottom: -60, left: -60,
             child: Container(
-              width: 180,
-              height: 180,
+              width: 160, height: 160,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.07),
-                shape: BoxShape.circle,
-              ),
+                  color: Colors.white.withOpacity(0.07),
+                  shape: BoxShape.circle),
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.95),
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 20,
-                      offset: Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.food_bank_rounded,
-                  size: 40,
-                  color: Color(0xffC75B12),
-                ),
-              ),
-              const SizedBox(height: 12),
-              const Text(
-                'FRAD',
-                style: TextStyle(
-                  fontSize: 30,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                  letterSpacing: 3,
-                ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Food Rescue & Donation',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 5,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.20),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(Icons.circle, size: 8, color: Colors.greenAccent),
-                    SizedBox(width: 6),
-                    Text(
-                      '23 listings available nearby',
-                      style: TextStyle(fontSize: 12, color: Colors.white),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 6),
-              const Text(
-                'Together We Can End Food Waste',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontStyle: FontStyle.italic,
-                  color: Colors.white70,
-                ),
-              ),
-              const SizedBox(height: 18),
+              const Text('🍱',
+                  style: TextStyle(fontSize: 52)),
+              const SizedBox(height: 16),
+              const Text('Reduce Food Waste',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 0.5)),
+              const SizedBox(height: 8),
+              const Text('Connect Extra Food With People Who Need It',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.white70,
+                      fontStyle: FontStyle.italic)),
+              const SizedBox(height: 28),
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/provider-home');
-                      },
+                      onPressed: () =>
+                          Navigator.pushNamed(context, '/signin'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: const Color(0xffC75B12),
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                            borderRadius: BorderRadius.circular(14)),
+                        elevation: 0,
                       ),
-                      child: const Text(
-                        "I'm a Provider",
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
+                      child: const Text('Sign In',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 15)),
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/receiver-home');
-                      },
+                      onPressed: () =>
+                          Navigator.pushNamed(context, '/register'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: const BorderSide(
-                          color: Colors.white70,
-                          width: 1.5,
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 12),
+                            color: Colors.white70, width: 1.8),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
+                            borderRadius: BorderRadius.circular(14)),
                       ),
-                      child: const Text(
-                        "I'm a Receiver",
-                        style: TextStyle(fontWeight: FontWeight.w600),
-                      ),
+                      child: const Text('Create Account',
+                          style: TextStyle(
+                              fontWeight: FontWeight.bold, fontSize: 15)),
                     ),
                   ),
                 ],
@@ -221,584 +210,619 @@ class _HeroSection extends StatelessWidget {
   }
 }
 
-// ─── Stats ────────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  SECTION 3 – Our Providers
+// ══════════════════════════════════════════════════════════════
+class _ProvidersSection extends StatelessWidget {
+  const _ProvidersSection();
 
-class _StatsRow extends StatelessWidget {
-  final List<Map<String, String>> stats = const [
-    {'value': '1.2k', 'label': 'Meals Saved'},
-    {'value': '480', 'label': 'KG Rescued'},
-    {'value': '38', 'label': 'Partners'},
+  static const List<Map<String, dynamic>> _providers = [
+    {
+      'emoji': '🍔',
+      'title': 'Restaurant',
+      'desc': 'Upload extra burgers, pizza and more',
+      'bg': Color(0xffFFF3E0),
+    },
+    {
+      'emoji': '🥐',
+      'title': 'Bakery',
+      'desc': 'Upload pastries, cakes and bread',
+      'bg': Color(0xffFCE4EC),
+    },
+    {
+      'emoji': '🍱',
+      'title': 'Hostel Mess',
+      'desc': 'Upload extra meal boxes daily',
+      'bg': Color(0xffE8F5E9),
+    },
+    {
+      'emoji': '🎉',
+      'title': 'Event Caterer',
+      'desc': 'Upload leftover event food',
+      'bg': Color(0xffE3F2FD),
+    },
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: stats
-          .map(
-            (s) => Expanded(
-              child: Container(
-                margin: const EdgeInsets.symmetric(horizontal: 4),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(14),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      s['value']!,
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xffC75B12),
+    return _Section(
+      label: 'OUR PROVIDERS',
+      title: 'Who Shares Food on FRAD?',
+      child: GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.1,
+        children: _providers.map((p) {
+          return Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: p['bg'],
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(p['emoji'], style: const TextStyle(fontSize: 32)),
+                const SizedBox(height: 8),
+                Text(p['title'],
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.bold,
+                        color: Color(0xff1A1A1A))),
+                const SizedBox(height: 4),
+                Text(p['desc'],
+                    style: const TextStyle(fontSize: 12, color: Colors.black54)),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SECTION 4 – How It Works
+// ══════════════════════════════════════════════════════════════
+class _HowItWorks extends StatelessWidget {
+  const _HowItWorks();
+
+  static const List<Map<String, dynamic>> _steps = [
+    {'icon': Icons.upload_rounded,       'step': '01', 'title': 'Provider Uploads Food',    'desc': 'Restaurant, bakery or hostel posts surplus food with quantity and pickup time.'},
+    {'icon': Icons.bookmark_add_rounded, 'step': '02', 'title': 'Customer Reserves Food',   'desc': 'Nearby users browse listings and reserve what they need instantly.'},
+    {'icon': Icons.qr_code_rounded,      'step': '03', 'title': 'QR Code Generated',         'desc': 'A unique QR code is sent to the customer for secure pickup.'},
+    {'icon': Icons.check_circle_rounded, 'step': '04', 'title': 'Pickup Completed',          'desc': 'Provider scans QR, order confirmed. Food saved, money saved!'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return _Section(
+      label: 'HOW IT WORKS',
+      title: 'Simple 4-Step Process',
+      bgColor: const Color(0xffFFF8F0),
+      child: Column(
+        children: List.generate(_steps.length, (i) {
+          final s = _steps[i];
+          return Column(
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Column(
+                    children: [
+                      Container(
+                        width: 48, height: 48,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xffC75B12), Color(0xffF59E0B)],
+                          ),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Icon(s['icon'] as IconData,
+                            color: Colors.white, size: 22),
+                      ),
+                      if (i < _steps.length - 1)
+                        Container(
+                            width: 2, height: 36,
+                            color: const Color(0xffF59E0B).withOpacity(0.4)),
+                    ],
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(s['step'],
+                              style: const TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xffF59E0B),
+                                  letterSpacing: 1.5)),
+                          const SizedBox(height: 2),
+                          Text(s['title'],
+                              style: const TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xff1A1A1A))),
+                          const SizedBox(height: 4),
+                          Text(s['desc'],
+                              style: const TextStyle(
+                                  fontSize: 13, color: Colors.black54,
+                                  height: 1.4)),
+                          const SizedBox(height: 16),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      s['label']!,
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-            ),
-          )
-          .toList(),
+            ],
+          );
+        }),
+      ),
     );
   }
 }
 
-// ─── Section Header ───────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  SECTION 5 – Key Features
+// ══════════════════════════════════════════════════════════════
+class _KeyFeatures extends StatelessWidget {
+  const _KeyFeatures();
 
-class _SectionHeader extends StatelessWidget {
-  final String title;
-  final VoidCallback? onSeeAll;
-
-  const _SectionHeader({required this.title, this.onSeeAll});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        if (onSeeAll != null)
-          GestureDetector(
-            onTap: onSeeAll,
-            child: const Text(
-              'See all →',
-              style: TextStyle(
-                fontSize: 13,
-                color: Color(0xffC75B12),
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-// ─── Food Listings ────────────────────────────────────────────────────────────
-
-class _FoodListings extends StatelessWidget {
-  final List<_FoodItem> items = const [
-    _FoodItem(
-      emoji: '🍛',
-      name: 'Chicken Biryani',
-      provider: 'UET Hostel Mess',
-      quantity: '50 plates',
-      pickup: '8PM – 9PM',
-      price: 'Rs. 50',
-      badgeColor: Color(0xffFEF3C7),
-      badgeTextColor: Color(0xff92400E),
-    ),
-    _FoodItem(
-      emoji: '🍩',
-      name: 'Assorted Donuts',
-      provider: 'ABC Bakery',
-      quantity: '20 pieces',
-      pickup: '9PM – 10PM',
-      price: 'FREE',
-      badgeColor: Color(0xffDBEAFE),
-      badgeTextColor: Color(0xff1E40AF),
-    ),
-    _FoodItem(
-      emoji: '🥗',
-      name: 'Leftover Salads',
-      provider: 'Grand Marriage Hall',
-      quantity: '30 boxes',
-      pickup: '7PM – 8PM',
-      price: 'Rs. 30',
-      badgeColor: Color(0xffD1FAE5),
-      badgeTextColor: Color(0xff065F46),
-    ),
+  static const List<Map<String, dynamic>> _features = [
+    {'icon': Icons.volunteer_activism_rounded, 'title': 'Food Rescue',           'desc': 'Rescue edible food before it goes to waste.',     'bg': Color(0xffFEF3C7), 'ic': Color(0xffB45309)},
+    {'icon': Icons.local_offer_rounded,        'title': 'Discounted Food',       'desc': 'Get quality meals at a fraction of the price.',   'bg': Color(0xffD1FAE5), 'ic': Color(0xff059669)},
+    {'icon': Icons.qr_code_scanner_rounded,    'title': 'QR Verification',       'desc': 'Secure and contactless pickup every time.',       'bg': Color(0xffDBEAFE), 'ic': Color(0xff2563EB)},
+    {'icon': Icons.wifi_rounded,               'title': 'Real-Time Availability','desc': 'Live updates on food listings near you.',         'bg': Color(0xffFFE4E6), 'ic': Color(0xffE11D48)},
+    {'icon': Icons.notifications_active_rounded,'title': 'Notifications',        'desc': 'Instant alerts when new food is posted.',        'bg': Color(0xffF3E8FF), 'ic': Color(0xff7C3AED)},
+    {'icon': Icons.track_changes_rounded,      'title': 'Smart Tracking',        'desc': 'Track how much food you have saved.',             'bg': Color(0xffFFF3E0), 'ic': Color(0xffC75B12)},
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: items
-          .map(
-            (item) => Container(
+    return _Section(
+      label: 'KEY FEATURES',
+      title: 'Everything You Need',
+      child: GridView.count(
+        crossAxisCount: 2,
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.2,
+        children: _features.map((f) {
+          return Container(
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8, offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                      color: f['bg'], borderRadius: BorderRadius.circular(12)),
+                  child: Icon(f['icon'] as IconData,
+                      color: f['ic'] as Color, size: 22),
+                ),
+                const SizedBox(height: 10),
+                Text(f['title'],
+                    style: const TextStyle(
+                        fontWeight: FontWeight.bold, fontSize: 13)),
+                const SizedBox(height: 4),
+                Text(f['desc'],
+                    style: const TextStyle(fontSize: 11, color: Colors.grey,
+                        height: 1.4)),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SECTION 6 – Impact Statistics
+// ══════════════════════════════════════════════════════════════
+class _ImpactStats extends StatelessWidget {
+  const _ImpactStats();
+
+  static const List<Map<String, String>> _stats = [
+    {'value': '2,500 KG', 'label': 'Food Saved'},
+    {'value': '8,000+',   'label': 'Meals Rescued'},
+    {'value': '120+',     'label': 'Providers'},
+    {'value': '5,000+',   'label': 'Orders Completed'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xffC75B12), Color(0xffF59E0B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        children: [
+          const Text('OUR IMPACT',
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white70,
+                  letterSpacing: 1.5)),
+          const SizedBox(height: 6),
+          const Text('Numbers That Matter',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white)),
+          const SizedBox(height: 24),
+          GridView.count(
+            crossAxisCount: 2,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: 2,
+            children: _stats.map((s) {
+              return Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.18),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(s['value']!,
+                        style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white)),
+                    const SizedBox(height: 3),
+                    Text(s['label']!,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                            fontSize: 11, color: Colors.white70)),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SECTION 7 – About Us
+// ══════════════════════════════════════════════════════════════
+class _AboutUs extends StatelessWidget {
+  const _AboutUs();
+
+  @override
+  Widget build(BuildContext context) {
+    return _Section(
+      label: 'ABOUT US',
+      title: 'What is FRAD?',
+      bgColor: const Color(0xffFFF8F0),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+              color: const Color(0xffF59E0B).withOpacity(0.3), width: 1.5),
+        ),
+        child: Column(
+          children: [
+            const Icon(Icons.food_bank_rounded,
+                size: 48, color: Color(0xffC75B12)),
+            const SizedBox(height: 14),
+            const Text(
+              'FRAD is a platform that helps restaurants, bakeries, hostel messes and event caterers share surplus food instead of wasting it.',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 14, color: Colors.black87, height: 1.6),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'We believe every extra meal deserves a second chance — not a trash bin. Join FRAD and be part of the food rescue movement.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 13,
+                  color: Colors.black54,
+                  height: 1.6,
+                  fontStyle: FontStyle.italic),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SECTION 8 – Contact Us
+// ══════════════════════════════════════════════════════════════
+class _ContactUs extends StatelessWidget {
+  const _ContactUs();
+
+  static const List<Map<String, dynamic>> _contacts = [
+    {'icon': Icons.email_rounded,       'label': 'Email',    'value': 'support@frad.com'},
+    {'icon': Icons.phone_rounded,       'label': 'Phone',    'value': '+92-XXX-XXXXXXX'},
+    {'icon': Icons.location_on_rounded, 'label': 'Location', 'value': 'COMSATS Abbottabad'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return _Section(
+      label: 'CONTACT US',
+      title: 'Get in Touch',
+      child: Column(
+        children: _contacts.map((c) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8, offset: const Offset(0, 2)),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 44, height: 44,
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                        colors: [Color(0xffC75B12), Color(0xffF59E0B)]),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(c['icon'] as IconData,
+                      color: Colors.white, size: 22),
+                ),
+                const SizedBox(width: 14),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(c['label'],
+                        style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5)),
+                    const SizedBox(height: 3),
+                    Text(c['value'],
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xff1A1A1A))),
+                  ],
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  SECTION 9 – Portals Section
+// ══════════════════════════════════════════════════════════════
+class _PortalsSection extends StatelessWidget {
+  const _PortalsSection();
+
+  static const List<Map<String, dynamic>> _portals = [
+    {'icon': Icons.person_rounded,          'title': 'Customer Portal',      'sub': 'Browse Food',        'bg': Color(0xffFFF3E0), 'ic': Color(0xffC75B12), 'route': '/customer'},
+    {'icon': Icons.restaurant_rounded,      'title': 'Restaurant Portal',    'sub': 'Manage Listings',    'bg': Color(0xffFCE4EC), 'ic': Color(0xffE11D48), 'route': '/restaurant'},
+    {'icon': Icons.bakery_dining_rounded,   'title': 'Bakery Portal',        'sub': 'Manage Products',    'bg': Color(0xffFFF8E1), 'ic': Color(0xffF59E0B), 'route': '/bakery'},
+    {'icon': Icons.dinner_dining_rounded,   'title': 'Hostel Mess Portal',   'sub': 'Manage Meals',       'bg': Color(0xffE8F5E9), 'ic': Color(0xff059669), 'route': '/hostel'},
+    {'icon': Icons.celebration_rounded,     'title': 'Event Caterer Portal', 'sub': 'Manage Events',      'bg': Color(0xffE3F2FD), 'ic': Color(0xff2563EB), 'route': '/caterer'},
+    {'icon': Icons.admin_panel_settings_rounded, 'title': 'Admin Portal',   'sub': 'System Control',     'bg': Color(0xffF3E8FF), 'ic': Color(0xff7C3AED), 'route': '/admin'},
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return _Section(
+      label: 'PORTALS',
+      title: 'Choose Your Portal',
+      bgColor: const Color(0xffFFF8F0),
+      child: Column(
+        children: _portals.map((p) {
+          return GestureDetector(
+            onTap: () => Navigator.pushNamed(context, p['route']),
+            child: Container(
               margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8, offset: const Offset(0, 2)),
                 ],
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 52,
-                    height: 52,
+                    width: 46, height: 46,
                     decoration: BoxDecoration(
-                      color: const Color(0xffFFF8F0),
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Center(
-                      child: Text(
-                        item.emoji,
-                        style: const TextStyle(fontSize: 26),
-                      ),
-                    ),
+                        color: p['bg'], borderRadius: BorderRadius.circular(13)),
+                    child: Icon(p['icon'] as IconData,
+                        color: p['ic'] as Color, size: 24),
                   ),
-                  const SizedBox(width: 12),
+                  const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          item.name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          '${item.provider} · ${item.quantity}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 2),
-                        Row(
-                          children: [
-                            const Icon(
-                              Icons.access_time,
-                              size: 12,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(width: 3),
-                            Text(
-                              item.pickup,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
+                        Text(p['title'],
+                            style: const TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 14)),
+                        Text(p['sub'],
+                            style: const TextStyle(
+                                fontSize: 12, color: Colors.grey)),
                       ],
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
-                    ),
-                    decoration: BoxDecoration(
-                      color: item.badgeColor,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      item.price,
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: item.badgeTextColor,
-                      ),
-                    ),
-                  ),
+                  const Icon(Icons.chevron_right_rounded,
+                      color: Colors.grey, size: 22),
                 ],
               ),
             ),
-          )
-          .toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 }
 
-class _FoodItem {
-  final String emoji, name, provider, quantity, pickup, price;
-  final Color badgeColor, badgeTextColor;
+// ══════════════════════════════════════════════════════════════
+//  SECTION 10 – Footer
+// ══════════════════════════════════════════════════════════════
+class _Footer extends StatelessWidget {
+  const _Footer();
 
-  const _FoodItem({
-    required this.emoji,
-    required this.name,
-    required this.provider,
-    required this.quantity,
-    required this.pickup,
-    required this.price,
-    required this.badgeColor,
-    required this.badgeTextColor,
-  });
-}
-
-// ─── Quick Actions ────────────────────────────────────────────────────────────
-
-class _QuickActions extends StatelessWidget {
-  final List<Map<String, dynamic>> actions = const [
-    {
-      'icon': Icons.local_offer_rounded,
-      'label': 'Discount Food',
-      'sub': 'Surplus at low price',
-      'bg': Color(0xffFEF3C7),
-      'ic': Color(0xffB45309),
-      'route': '/discount-food',
-    },
-    {
-      'icon': Icons.favorite_rounded,
-      'label': 'Free Donations',
-      'sub': 'Zero cost meals',
-      'bg': Color(0xffD1FAE5),
-      'ic': Color(0xff059669),
-      'route': '/free-food',
-    },
-    {
-      'icon': Icons.bookmark_rounded,
-      'label': 'My Reservations',
-      'sub': 'Track your pickups',
-      'bg': Color(0xffDBEAFE),
-      'ic': Color(0xff2563EB),
-      'route': '/reservations',
-    },
-    {
-      'icon': Icons.bar_chart_rounded,
-      'label': 'Impact Stats',
-      'sub': 'Waste saved today',
-      'bg': Color(0xffFFE4E6),
-      'ic': Color(0xffE11D48),
-      'route': '/stats',
-    },
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return GridView.count(
-      crossAxisCount: 2,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
-      childAspectRatio: 1.5,
-      children: actions
-          .map(
-            (a) => GestureDetector(
-              onTap: () => Navigator.pushNamed(context, a['route']),
-              child: Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: a['bg'],
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(a['icon'], color: a['ic'], size: 20),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      a['label'],
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                    Text(
-                      a['sub'],
-                      style: const TextStyle(fontSize: 11, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          )
-          .toList(),
-    );
-  }
-}
-
-// ─── Charity Section ──────────────────────────────────────────────────────────
-
-class _CharitySection extends StatelessWidget {
-  final List<Map<String, String>> ngos = const [
-    {
-      'emoji': '🤝',
-      'name': 'Helping Hands NGO',
-      'sub': 'Abbottabad · Serving 200+ daily',
-    },
-    {
-      'emoji': '❤️',
-      'name': 'Edhi Foundation',
-      'sub': 'Nationwide · Food & shelter',
-    },
-    {
-      'emoji': '🏦',
-      'name': 'Pakistan Food Bank',
-      'sub': 'Karachi · Emergency relief',
-    },
+  static const List<String> _links = [
+    'Home', 'About Us', 'Contact Us',
+    'Privacy Policy', 'Terms & Conditions', 'FAQs',
   ];
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xffC75B12), Color(0xffF59E0B)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
       child: Column(
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Text(
-                'Charity Partners',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+              Container(
+                width: 38, height: 38,
+                decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(10)),
+                child: const Icon(Icons.food_bank_rounded,
+                    size: 22, color: Color(0xffC75B12)),
               ),
-              GestureDetector(
-                onTap: () => Navigator.pushNamed(context, '/charities'),
-                child: const Text(
-                  'See all →',
+              const SizedBox(width: 10),
+              const Text('FRAD',
                   style: TextStyle(
-                    color: Color(0xffC75B12),
-                    fontWeight: FontWeight.w600,
-                    fontSize: 13,
-                  ),
-                ),
-              ),
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                      letterSpacing: 2)),
             ],
           ),
-          const SizedBox(height: 12),
-          ...ngos.map(
-            (ngo) => Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 20,
-                    backgroundColor: const Color(0xffFEF3C7),
-                    child: Text(
-                      ngo['emoji']!,
-                      style: const TextStyle(fontSize: 18),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          ngo['name']!,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                          ),
-                        ),
-                        Text(
-                          ngo['sub']!,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: const Color(0xffD1FAE5),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text(
-                      'Active',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: Color(0xff065F46),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+          const SizedBox(height: 8),
+          const Text('Save Food • Share Kindness • Reduce Waste',
+              style: TextStyle(fontSize: 12, color: Colors.white70)),
+          const SizedBox(height: 24),
+          Wrap(
+            alignment: WrapAlignment.center,
+            spacing: 16,
+            runSpacing: 10,
+            children: _links.map((link) {
+              return GestureDetector(
+                onTap: () {},
+                child: Text(link,
+                    style: const TextStyle(
+                        fontSize: 13,
+                        color: Colors.white,
+                        fontWeight: FontWeight.w500)),
+              );
+            }).toList(),
           ),
+          const SizedBox(height: 24),
+          Divider(color: Colors.white.withOpacity(0.3)),
+          const SizedBox(height: 16),
+          const Text('© 2025 FRAD — COMSATS Abbottabad',
+              style: TextStyle(fontSize: 12, color: Colors.white60)),
+          const Text('All rights reserved.',
+              style: TextStyle(fontSize: 11, color: Colors.white54)),
         ],
       ),
     );
   }
 }
 
-// ─── Add Food Button ──────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+//  REUSABLE: _Section wrapper
+// ══════════════════════════════════════════════════════════════
+class _Section extends StatelessWidget {
+  final String label;
+  final String title;
+  final Widget child;
+  final Color? bgColor;
 
-class _AddFoodButton extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: () => Navigator.pushNamed(context, '/add-food'),
-        icon: const Icon(Icons.add_circle_outline),
-        label: const Text(
-          'Add Surplus Food',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xffC75B12),
-          foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(vertical: 16),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          elevation: 4,
-          shadowColor: const Color(0xffC75B12).withOpacity(0.4),
-        ),
-      ),
-    );
-  }
-}
-
-// ─── Bottom Nav Bar ───────────────────────────────────────────────────────────
-
-class _BottomNavBar extends StatefulWidget {
-  @override
-  State<_BottomNavBar> createState() => _BottomNavBarState();
-}
-
-class _BottomNavBarState extends State<_BottomNavBar> {
-  int _selected = 0;
-
-  final List<Map<String, dynamic>> _items = const [
-    {'icon': Icons.home_rounded, 'label': 'Home'},
-    {'icon': Icons.search_rounded, 'label': 'Explore'},
-    {'icon': Icons.notifications_rounded, 'label': 'Alerts'},
-    {'icon': Icons.person_rounded, 'label': 'Profile'},
-  ];
+  const _Section({
+    required this.label,
+    required this.title,
+    required this.child,
+    this.bgColor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, -2),
-          ),
+      width: double.infinity,
+      color: bgColor ?? const Color(0xffFFFBF5),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xffF59E0B),
+                  letterSpacing: 1.5)),
+          const SizedBox(height: 4),
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xff1A1A1A))),
+          const SizedBox(height: 16),
+          child,
         ],
-      ),
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 8),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(
-              _items.length,
-              (i) => GestureDetector(
-                onTap: () => setState(() => _selected = i),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: _selected == i
-                        ? const Color(0xffC75B12).withOpacity(0.10)
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        _items[i]['icon'],
-                        color: _selected == i
-                            ? const Color(0xffC75B12)
-                            : Colors.grey,
-                        size: 24,
-                      ),
-                      const SizedBox(height: 3),
-                      Text(
-                        _items[i]['label'],
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: _selected == i
-                              ? FontWeight.w600
-                              : FontWeight.normal,
-                          color: _selected == i
-                              ? const Color(0xffC75B12)
-                              : Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
       ),
     );
   }

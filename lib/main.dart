@@ -19,7 +19,7 @@ class FRADApp extends StatelessWidget {
 
       routes: {
         '/': (context) => const SplashScreen(),
-        '/landing': (context) => const LandingScreen(),
+        '/landing': (context) => const LandingPage(),
       },
     );
   }
