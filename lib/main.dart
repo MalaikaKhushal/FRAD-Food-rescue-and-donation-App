@@ -14,7 +14,13 @@ class FRADApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'FRAD',
-      home: const LandingScreen(),
+
+      initialRoute: '/',
+
+      routes: {
+        '/': (context) => const SplashScreen(),
+        '/landing': (context) => const LandingScreen(),
+      },
     );
   }
 }
