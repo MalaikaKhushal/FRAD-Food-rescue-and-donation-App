@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "914631924174",
+    "project_id": "frad-d3156",
+    "storage_bucket": "frad-d3156.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:914631924174:android:cd89ea520d7a3ebd65f39f",
+        "android_client_info": {
+          "package_name": "com.example.frad"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDYRykaZpDPPfrqasBYoZ1sq08BF7xeCAU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
