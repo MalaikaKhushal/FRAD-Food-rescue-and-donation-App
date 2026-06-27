@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'loginscreen.dart';
 // ─────────────────────────────────────────────────────────────
 //  FRAD – Landing Page  (landingpage.dart)
 //  Place this file in:  lib/screens/landingpage.dart
@@ -9,10 +9,10 @@ class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
 
   // ── Brand colors (same as SplashScreen) ──
-  static const Color primary   = Color(0xffC75B12);
-  static const Color amber     = Color(0xffF59E0B);
+  static const Color primary = Color(0xffC75B12);
+  static const Color amber = Color(0xffF59E0B);
   static const Color lightGold = Color(0xffFFD89B);
-  static const Color bgLight   = Color(0xffFFFBF5);
+  static const Color bgLight = Color(0xffFFFBF5);
   static const Color cardWhite = Color(0xffFFFFFF);
 
   @override
@@ -66,26 +66,37 @@ class _AppHeader extends StatelessWidget {
               color: Colors.white.withOpacity(0.95),
               borderRadius: BorderRadius.circular(14),
             ),
-            child: const Icon(Icons.food_bank_rounded,
-                size: 30, color: Color(0xffC75B12)),
+            child: const Icon(
+              Icons.food_bank_rounded,
+              size: 30,
+              color: Color(0xffC75B12),
+            ),
           ),
           const SizedBox(width: 12),
           const Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('FRAD',
-                  style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 2)),
-              Text('Food Rescue & Donation App',
-                  style: TextStyle(fontSize: 11, color: Colors.white70)),
-              Text('Save Food • Save Money • Help Communities',
-                  style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.white60,
-                      fontStyle: FontStyle.italic)),
+              Text(
+                'FRAD',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 2,
+                ),
+              ),
+              Text(
+                'Food Rescue & Donation App',
+                style: TextStyle(fontSize: 11, color: Colors.white70),
+              ),
+              Text(
+                'Save Food • Save Money • Help Communities',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.white60,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
             ],
           ),
         ],
@@ -125,61 +136,84 @@ class _HeroBanner extends StatelessWidget {
         children: [
           // Decorative circles
           Positioned(
-            top: -40, right: -40,
+            top: -40,
+            right: -40,
             child: Container(
-              width: 130, height: 130,
+              width: 130,
+              height: 130,
               decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.10),
-                  shape: BoxShape.circle),
+                color: Colors.white.withOpacity(0.10),
+                shape: BoxShape.circle,
+              ),
             ),
           ),
           Positioned(
-            bottom: -60, left: -60,
+            bottom: -60,
+            left: -60,
             child: Container(
-              width: 160, height: 160,
+              width: 160,
+              height: 160,
               decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.07),
-                  shape: BoxShape.circle),
+                color: Colors.white.withOpacity(0.07),
+                shape: BoxShape.circle,
+              ),
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              const Text('🍱',
-                  style: TextStyle(fontSize: 52)),
+              const Text('🍱', style: TextStyle(fontSize: 52)),
               const SizedBox(height: 16),
-              const Text('Reduce Food Waste',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 0.5)),
+              const Text(
+                'Reduce Food Waste',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 0.5,
+                ),
+              ),
               const SizedBox(height: 8),
-              const Text('Connect Extra Food With People Who Need It',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.white70,
-                      fontStyle: FontStyle.italic)),
+              const Text(
+                'Connect Extra Food With People Who Need It',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.white70,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+
               const SizedBox(height: 28),
               Row(
                 children: [
                   Expanded(
                     child: ElevatedButton(
-                      onPressed: () =>
-                          Navigator.pushNamed(context, '/signin'),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen(),
+                          ),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: const Color(0xffC75B12),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                         elevation: 0,
                       ),
-                      child: const Text('Sign In',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 15)),
+                      child: const Text(
+                        'Sign In',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -190,14 +224,21 @@ class _HeroBanner extends StatelessWidget {
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: const BorderSide(
-                            color: Colors.white70, width: 1.8),
+                          color: Colors.white70,
+                          width: 1.8,
+                        ),
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14)),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
                       ),
-                      child: const Text('Create Account',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 15)),
+                      child: const Text(
+                        "Create Account",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -267,13 +308,19 @@ class _ProvidersSection extends StatelessWidget {
               children: [
                 Text(p['emoji'], style: const TextStyle(fontSize: 32)),
                 const SizedBox(height: 8),
-                Text(p['title'],
-                    style: const TextStyle(
-                        fontSize: 15, fontWeight: FontWeight.bold,
-                        color: Color(0xff1A1A1A))),
+                Text(
+                  p['title'],
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xff1A1A1A),
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(p['desc'],
-                    style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                Text(
+                  p['desc'],
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
               ],
             ),
           );
@@ -290,10 +337,32 @@ class _HowItWorks extends StatelessWidget {
   const _HowItWorks();
 
   static const List<Map<String, dynamic>> _steps = [
-    {'icon': Icons.upload_rounded,       'step': '01', 'title': 'Provider Uploads Food',    'desc': 'Restaurant, bakery or hostel posts surplus food with quantity and pickup time.'},
-    {'icon': Icons.bookmark_add_rounded, 'step': '02', 'title': 'Customer Reserves Food',   'desc': 'Nearby users browse listings and reserve what they need instantly.'},
-    {'icon': Icons.qr_code_rounded,      'step': '03', 'title': 'QR Code Generated',         'desc': 'A unique QR code is sent to the customer for secure pickup.'},
-    {'icon': Icons.check_circle_rounded, 'step': '04', 'title': 'Pickup Completed',          'desc': 'Provider scans QR, order confirmed. Food saved, money saved!'},
+    {
+      'icon': Icons.upload_rounded,
+      'step': '01',
+      'title': 'Provider Uploads Food',
+      'desc':
+          'Restaurant, bakery or hostel posts surplus food with quantity and pickup time.',
+    },
+    {
+      'icon': Icons.bookmark_add_rounded,
+      'step': '02',
+      'title': 'Customer Reserves Food',
+      'desc':
+          'Nearby users browse listings and reserve what they need instantly.',
+    },
+    {
+      'icon': Icons.qr_code_rounded,
+      'step': '03',
+      'title': 'QR Code Generated',
+      'desc': 'A unique QR code is sent to the customer for secure pickup.',
+    },
+    {
+      'icon': Icons.check_circle_rounded,
+      'step': '04',
+      'title': 'Pickup Completed',
+      'desc': 'Provider scans QR, order confirmed. Food saved, money saved!',
+    },
   ];
 
   @override
@@ -313,20 +382,26 @@ class _HowItWorks extends StatelessWidget {
                   Column(
                     children: [
                       Container(
-                        width: 48, height: 48,
+                        width: 48,
+                        height: 48,
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
                             colors: [Color(0xffC75B12), Color(0xffF59E0B)],
                           ),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(s['icon'] as IconData,
-                            color: Colors.white, size: 22),
+                        child: Icon(
+                          s['icon'] as IconData,
+                          color: Colors.white,
+                          size: 22,
+                        ),
                       ),
                       if (i < _steps.length - 1)
                         Container(
-                            width: 2, height: 36,
-                            color: const Color(0xffF59E0B).withOpacity(0.4)),
+                          width: 2,
+                          height: 36,
+                          color: const Color(0xffF59E0B).withOpacity(0.4),
+                        ),
                     ],
                   ),
                   const SizedBox(width: 16),
@@ -336,23 +411,33 @@ class _HowItWorks extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(s['step'],
-                              style: const TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xffF59E0B),
-                                  letterSpacing: 1.5)),
+                          Text(
+                            s['step'],
+                            style: const TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xffF59E0B),
+                              letterSpacing: 1.5,
+                            ),
+                          ),
                           const SizedBox(height: 2),
-                          Text(s['title'],
-                              style: const TextStyle(
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xff1A1A1A))),
+                          Text(
+                            s['title'],
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xff1A1A1A),
+                            ),
+                          ),
                           const SizedBox(height: 4),
-                          Text(s['desc'],
-                              style: const TextStyle(
-                                  fontSize: 13, color: Colors.black54,
-                                  height: 1.4)),
+                          Text(
+                            s['desc'],
+                            style: const TextStyle(
+                              fontSize: 13,
+                              color: Colors.black54,
+                              height: 1.4,
+                            ),
+                          ),
                           const SizedBox(height: 16),
                         ],
                       ),
@@ -375,12 +460,48 @@ class _KeyFeatures extends StatelessWidget {
   const _KeyFeatures();
 
   static const List<Map<String, dynamic>> _features = [
-    {'icon': Icons.volunteer_activism_rounded, 'title': 'Food Rescue',           'desc': 'Rescue edible food before it goes to waste.',     'bg': Color(0xffFEF3C7), 'ic': Color(0xffB45309)},
-    {'icon': Icons.local_offer_rounded,        'title': 'Discounted Food',       'desc': 'Get quality meals at a fraction of the price.',   'bg': Color(0xffD1FAE5), 'ic': Color(0xff059669)},
-    {'icon': Icons.qr_code_scanner_rounded,    'title': 'QR Verification',       'desc': 'Secure and contactless pickup every time.',       'bg': Color(0xffDBEAFE), 'ic': Color(0xff2563EB)},
-    {'icon': Icons.wifi_rounded,               'title': 'Real-Time Availability','desc': 'Live updates on food listings near you.',         'bg': Color(0xffFFE4E6), 'ic': Color(0xffE11D48)},
-    {'icon': Icons.notifications_active_rounded,'title': 'Notifications',        'desc': 'Instant alerts when new food is posted.',        'bg': Color(0xffF3E8FF), 'ic': Color(0xff7C3AED)},
-    {'icon': Icons.track_changes_rounded,      'title': 'Smart Tracking',        'desc': 'Track how much food you have saved.',             'bg': Color(0xffFFF3E0), 'ic': Color(0xffC75B12)},
+    {
+      'icon': Icons.volunteer_activism_rounded,
+      'title': 'Food Rescue',
+      'desc': 'Rescue edible food before it goes to waste.',
+      'bg': Color(0xffFEF3C7),
+      'ic': Color(0xffB45309),
+    },
+    {
+      'icon': Icons.local_offer_rounded,
+      'title': 'Discounted Food',
+      'desc': 'Get quality meals at a fraction of the price.',
+      'bg': Color(0xffD1FAE5),
+      'ic': Color(0xff059669),
+    },
+    {
+      'icon': Icons.qr_code_scanner_rounded,
+      'title': 'QR Verification',
+      'desc': 'Secure and contactless pickup every time.',
+      'bg': Color(0xffDBEAFE),
+      'ic': Color(0xff2563EB),
+    },
+    {
+      'icon': Icons.wifi_rounded,
+      'title': 'Real-Time Availability',
+      'desc': 'Live updates on food listings near you.',
+      'bg': Color(0xffFFE4E6),
+      'ic': Color(0xffE11D48),
+    },
+    {
+      'icon': Icons.notifications_active_rounded,
+      'title': 'Notifications',
+      'desc': 'Instant alerts when new food is posted.',
+      'bg': Color(0xffF3E8FF),
+      'ic': Color(0xff7C3AED),
+    },
+    {
+      'icon': Icons.track_changes_rounded,
+      'title': 'Smart Tracking',
+      'desc': 'Track how much food you have saved.',
+      'bg': Color(0xffFFF3E0),
+      'ic': Color(0xffC75B12),
+    },
   ];
 
   @override
@@ -404,7 +525,8 @@ class _KeyFeatures extends StatelessWidget {
               boxShadow: [
                 BoxShadow(
                   color: Colors.black.withOpacity(0.05),
-                  blurRadius: 8, offset: const Offset(0, 2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
             ),
@@ -412,20 +534,35 @@ class _KeyFeatures extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 40, height: 40,
+                  width: 40,
+                  height: 40,
                   decoration: BoxDecoration(
-                      color: f['bg'], borderRadius: BorderRadius.circular(12)),
-                  child: Icon(f['icon'] as IconData,
-                      color: f['ic'] as Color, size: 22),
+                    color: f['bg'],
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(
+                    f['icon'] as IconData,
+                    color: f['ic'] as Color,
+                    size: 22,
+                  ),
                 ),
                 const SizedBox(height: 10),
-                Text(f['title'],
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold, fontSize: 13)),
+                Text(
+                  f['title'],
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 13,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text(f['desc'],
-                    style: const TextStyle(fontSize: 11, color: Colors.grey,
-                        height: 1.4)),
+                Text(
+                  f['desc'],
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: Colors.grey,
+                    height: 1.4,
+                  ),
+                ),
               ],
             ),
           );
@@ -443,9 +580,9 @@ class _ImpactStats extends StatelessWidget {
 
   static const List<Map<String, String>> _stats = [
     {'value': '2,500 KG', 'label': 'Food Saved'},
-    {'value': '8,000+',   'label': 'Meals Rescued'},
-    {'value': '120+',     'label': 'Providers'},
-    {'value': '5,000+',   'label': 'Orders Completed'},
+    {'value': '8,000+', 'label': 'Meals Rescued'},
+    {'value': '120+', 'label': 'Providers'},
+    {'value': '5,000+', 'label': 'Orders Completed'},
   ];
 
   @override
@@ -464,18 +601,24 @@ class _ImpactStats extends StatelessWidget {
       ),
       child: Column(
         children: [
-          const Text('OUR IMPACT',
-              style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white70,
-                  letterSpacing: 1.5)),
+          const Text(
+            'OUR IMPACT',
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Colors.white70,
+              letterSpacing: 1.5,
+            ),
+          ),
           const SizedBox(height: 6),
-          const Text('Numbers That Matter',
-              style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white)),
+          const Text(
+            'Numbers That Matter',
+            style: TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
           const SizedBox(height: 24),
           GridView.count(
             crossAxisCount: 2,
@@ -494,16 +637,23 @@ class _ImpactStats extends StatelessWidget {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(s['value']!,
-                        style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
+                    Text(
+                      s['value']!,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
                     const SizedBox(height: 3),
-                    Text(s['label']!,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                            fontSize: 11, color: Colors.white70)),
+                    Text(
+                      s['label']!,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.white70,
+                      ),
+                    ),
                   ],
                 ),
               );
@@ -533,27 +683,37 @@ class _AboutUs extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-              color: const Color(0xffF59E0B).withOpacity(0.3), width: 1.5),
+            color: const Color(0xffF59E0B).withOpacity(0.3),
+            width: 1.5,
+          ),
         ),
         child: Column(
           children: [
-            const Icon(Icons.food_bank_rounded,
-                size: 48, color: Color(0xffC75B12)),
+            const Icon(
+              Icons.food_bank_rounded,
+              size: 48,
+              color: Color(0xffC75B12),
+            ),
             const SizedBox(height: 14),
             const Text(
               'FRAD is a platform that helps restaurants, bakeries, hostel messes and event caterers share surplus food instead of wasting it.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.black87, height: 1.6),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.black87,
+                height: 1.6,
+              ),
             ),
             const SizedBox(height: 16),
             const Text(
               'We believe every extra meal deserves a second chance — not a trash bin. Join FRAD and be part of the food rescue movement.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                  fontSize: 13,
-                  color: Colors.black54,
-                  height: 1.6,
-                  fontStyle: FontStyle.italic),
+                fontSize: 13,
+                color: Colors.black54,
+                height: 1.6,
+                fontStyle: FontStyle.italic,
+              ),
             ),
           ],
         ),
@@ -569,9 +729,17 @@ class _ContactUs extends StatelessWidget {
   const _ContactUs();
 
   static const List<Map<String, dynamic>> _contacts = [
-    {'icon': Icons.email_rounded,       'label': 'Email',    'value': 'support@frad.com'},
-    {'icon': Icons.phone_rounded,       'label': 'Phone',    'value': '+92-XXX-XXXXXXX'},
-    {'icon': Icons.location_on_rounded, 'label': 'Location', 'value': 'COMSATS Abbottabad'},
+    {
+      'icon': Icons.email_rounded,
+      'label': 'Email',
+      'value': 'support@frad.com',
+    },
+    {'icon': Icons.phone_rounded, 'label': 'Phone', 'value': '+92-XXX-XXXXXXX'},
+    {
+      'icon': Icons.location_on_rounded,
+      'label': 'Location',
+      'value': 'COMSATS Abbottabad',
+    },
   ];
 
   @override
@@ -589,38 +757,51 @@ class _ContactUs extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 8, offset: const Offset(0, 2)),
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
               ],
             ),
             child: Row(
               children: [
                 Container(
-                  width: 44, height: 44,
+                  width: 44,
+                  height: 44,
                   decoration: BoxDecoration(
                     gradient: const LinearGradient(
-                        colors: [Color(0xffC75B12), Color(0xffF59E0B)]),
+                      colors: [Color(0xffC75B12), Color(0xffF59E0B)],
+                    ),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(c['icon'] as IconData,
-                      color: Colors.white, size: 22),
+                  child: Icon(
+                    c['icon'] as IconData,
+                    color: Colors.white,
+                    size: 22,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(c['label'],
-                        style: const TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey,
-                            fontWeight: FontWeight.w600,
-                            letterSpacing: 0.5)),
+                    Text(
+                      c['label'],
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: Colors.grey,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
                     const SizedBox(height: 3),
-                    Text(c['value'],
-                        style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xff1A1A1A))),
+                    Text(
+                      c['value'],
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xff1A1A1A),
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -639,12 +820,54 @@ class _PortalsSection extends StatelessWidget {
   const _PortalsSection();
 
   static const List<Map<String, dynamic>> _portals = [
-    {'icon': Icons.person_rounded,          'title': 'Customer Portal',      'sub': 'Browse Food',        'bg': Color(0xffFFF3E0), 'ic': Color(0xffC75B12), 'route': '/customer'},
-    {'icon': Icons.restaurant_rounded,      'title': 'Restaurant Portal',    'sub': 'Manage Listings',    'bg': Color(0xffFCE4EC), 'ic': Color(0xffE11D48), 'route': '/restaurant'},
-    {'icon': Icons.bakery_dining_rounded,   'title': 'Bakery Portal',        'sub': 'Manage Products',    'bg': Color(0xffFFF8E1), 'ic': Color(0xffF59E0B), 'route': '/bakery'},
-    {'icon': Icons.dinner_dining_rounded,   'title': 'Hostel Mess Portal',   'sub': 'Manage Meals',       'bg': Color(0xffE8F5E9), 'ic': Color(0xff059669), 'route': '/hostel'},
-    {'icon': Icons.celebration_rounded,     'title': 'Event Caterer Portal', 'sub': 'Manage Events',      'bg': Color(0xffE3F2FD), 'ic': Color(0xff2563EB), 'route': '/caterer'},
-    {'icon': Icons.admin_panel_settings_rounded, 'title': 'Admin Portal',   'sub': 'System Control',     'bg': Color(0xffF3E8FF), 'ic': Color(0xff7C3AED), 'route': '/admin'},
+    {
+      'icon': Icons.person_rounded,
+      'title': 'Customer Portal',
+      'sub': 'Browse Food',
+      'bg': Color(0xffFFF3E0),
+      'ic': Color(0xffC75B12),
+      'route': '/customer',
+    },
+    {
+      'icon': Icons.restaurant_rounded,
+      'title': 'Restaurant Portal',
+      'sub': 'Manage Listings',
+      'bg': Color(0xffFCE4EC),
+      'ic': Color(0xffE11D48),
+      'route': '/restaurant',
+    },
+    {
+      'icon': Icons.bakery_dining_rounded,
+      'title': 'Bakery Portal',
+      'sub': 'Manage Products',
+      'bg': Color(0xffFFF8E1),
+      'ic': Color(0xffF59E0B),
+      'route': '/bakery',
+    },
+    {
+      'icon': Icons.dinner_dining_rounded,
+      'title': 'Hostel Mess Portal',
+      'sub': 'Manage Meals',
+      'bg': Color(0xffE8F5E9),
+      'ic': Color(0xff059669),
+      'route': '/hostel',
+    },
+    {
+      'icon': Icons.celebration_rounded,
+      'title': 'Event Caterer Portal',
+      'sub': 'Manage Events',
+      'bg': Color(0xffE3F2FD),
+      'ic': Color(0xff2563EB),
+      'route': '/caterer',
+    },
+    {
+      'icon': Icons.admin_panel_settings_rounded,
+      'title': 'Admin Portal',
+      'sub': 'System Control',
+      'bg': Color(0xffF3E8FF),
+      'ic': Color(0xff7C3AED),
+      'route': '/admin',
+    },
   ];
 
   @override
@@ -659,42 +882,60 @@ class _PortalsSection extends StatelessWidget {
             onTap: () => Navigator.pushNamed(context, p['route']),
             child: Container(
               margin: const EdgeInsets.only(bottom: 10),
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 16, vertical: 14),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8, offset: const Offset(0, 2)),
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
                 ],
               ),
               child: Row(
                 children: [
                   Container(
-                    width: 46, height: 46,
+                    width: 46,
+                    height: 46,
                     decoration: BoxDecoration(
-                        color: p['bg'], borderRadius: BorderRadius.circular(13)),
-                    child: Icon(p['icon'] as IconData,
-                        color: p['ic'] as Color, size: 24),
+                      color: p['bg'],
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: Icon(
+                      p['icon'] as IconData,
+                      color: p['ic'] as Color,
+                      size: 24,
+                    ),
                   ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(p['title'],
-                            style: const TextStyle(
-                                fontWeight: FontWeight.bold, fontSize: 14)),
-                        Text(p['sub'],
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.grey)),
+                        Text(
+                          p['title'],
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                        Text(
+                          p['sub'],
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
                       ],
                     ),
                   ),
-                  const Icon(Icons.chevron_right_rounded,
-                      color: Colors.grey, size: 22),
+                  const Icon(
+                    Icons.chevron_right_rounded,
+                    color: Colors.grey,
+                    size: 22,
+                  ),
                 ],
               ),
             ),
@@ -712,8 +953,12 @@ class _Footer extends StatelessWidget {
   const _Footer();
 
   static const List<String> _links = [
-    'Home', 'About Us', 'Contact Us',
-    'Privacy Policy', 'Terms & Conditions', 'FAQs',
+    'Home',
+    'About Us',
+    'Contact Us',
+    'Privacy Policy',
+    'Terms & Conditions',
+    'FAQs',
   ];
 
   @override
@@ -735,25 +980,35 @@ class _Footer extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 38, height: 38,
+                width: 38,
+                height: 38,
                 decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(10)),
-                child: const Icon(Icons.food_bank_rounded,
-                    size: 22, color: Color(0xffC75B12)),
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.food_bank_rounded,
+                  size: 22,
+                  color: Color(0xffC75B12),
+                ),
               ),
               const SizedBox(width: 10),
-              const Text('FRAD',
-                  style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      letterSpacing: 2)),
+              const Text(
+                'FRAD',
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  letterSpacing: 2,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          const Text('Save Food • Share Kindness • Reduce Waste',
-              style: TextStyle(fontSize: 12, color: Colors.white70)),
+          const Text(
+            'Save Food • Share Kindness • Reduce Waste',
+            style: TextStyle(fontSize: 12, color: Colors.white70),
+          ),
           const SizedBox(height: 24),
           Wrap(
             alignment: WrapAlignment.center,
@@ -762,21 +1017,28 @@ class _Footer extends StatelessWidget {
             children: _links.map((link) {
               return GestureDetector(
                 onTap: () {},
-                child: Text(link,
-                    style: const TextStyle(
-                        fontSize: 13,
-                        color: Colors.white,
-                        fontWeight: FontWeight.w500)),
+                child: Text(
+                  link,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               );
             }).toList(),
           ),
           const SizedBox(height: 24),
           Divider(color: Colors.white.withOpacity(0.3)),
           const SizedBox(height: 16),
-          const Text('© 2025 FRAD — COMSATS Abbottabad',
-              style: TextStyle(fontSize: 12, color: Colors.white60)),
-          const Text('All rights reserved.',
-              style: TextStyle(fontSize: 11, color: Colors.white54)),
+          const Text(
+            '© 2025 FRAD — COMSATS Abbottabad',
+            style: TextStyle(fontSize: 12, color: Colors.white60),
+          ),
+          const Text(
+            'All rights reserved.',
+            style: TextStyle(fontSize: 11, color: Colors.white54),
+          ),
         ],
       ),
     );
@@ -808,18 +1070,24 @@ class _Section extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label,
-              style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xffF59E0B),
-                  letterSpacing: 1.5)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.bold,
+              color: Color(0xffF59E0B),
+              letterSpacing: 1.5,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(title,
-              style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xff1A1A1A))),
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Color(0xff1A1A1A),
+            ),
+          ),
           const SizedBox(height: 16),
           child,
         ],
