@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'loginscreen.dart';
+import 'signupscreen.dart';
 // ─────────────────────────────────────────────────────────────
 //  FRAD – Landing Page  (landingpage.dart)
 //  Place this file in:  lib/screens/landingpage.dart
@@ -219,8 +220,15 @@ class _HeroBanner extends StatelessWidget {
                   const SizedBox(width: 12),
                   Expanded(
                     child: OutlinedButton(
-                      onPressed: () =>
-                          Navigator.pushNamed(context, '/register'),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const SignupScreen(),
+                          ),
+                        );
+                      },
+
                       style: OutlinedButton.styleFrom(
                         foregroundColor: Colors.white,
                         side: const BorderSide(
@@ -232,8 +240,9 @@ class _HeroBanner extends StatelessWidget {
                           borderRadius: BorderRadius.circular(14),
                         ),
                       ),
+
                       child: const Text(
-                        "Create Account",
+                        'Create Account',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 15,

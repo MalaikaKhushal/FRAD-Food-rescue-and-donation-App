@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:frad/screens/signupscreen.dart';
 
 import 'firebase_options.dart';
 
@@ -30,6 +31,7 @@ class FRADApp extends StatelessWidget {
         '/': (context) => const SplashScreen(),
         '/landing': (context) => const LandingPage(),
         '/signin': (context) => const LoginScreen(),
+        '/createaccount': (context) => const SignupScreen(),
       },
     );
   }

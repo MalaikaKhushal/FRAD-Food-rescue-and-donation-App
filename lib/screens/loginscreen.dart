@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'landingpage.dart';
 
+import 'signupscreen.dart';
+
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -227,32 +229,44 @@ class _LoginScreenState extends State<LoginScreen> {
                                 });
                               },
                             ),
-
-                            const Text(
-                              "Remember Me",
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w500,
+                            // Wrap labels inside Flexible to dynamically resize
+                            const Flexible(
+                              child: Text(
+                                "Remember Me",
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
                               ),
                             ),
-
                             const Spacer(),
-
-                            TextButton(
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      "Forgot Password screen coming soon.",
+                            Flexible(
+                              child: TextButton(
+                                style: TextButton.styleFrom(
+                                  padding: EdgeInsets
+                                      .zero, // Removes extra button padding
+                                  minimumSize: const Size(0, 0),
+                                  tapTargetSize:
+                                      MaterialTapTargetSize.shrinkWrap,
+                                ),
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text(
+                                        "Forgot Password screen coming soon.",
+                                      ),
                                     ),
+                                  );
+                                },
+                                child: const Text(
+                                  "Forgot Password?",
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Color(0xffF57C00),
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
                                   ),
-                                );
-                              },
-                              child: const Text(
-                                "Forgot Password?",
-                                style: TextStyle(
-                                  color: Color(0xffF57C00),
-                                  fontWeight: FontWeight.bold,
                                 ),
                               ),
                             ),
@@ -261,60 +275,76 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         const SizedBox(height: 25),
 
+                        // Login Action Button
                         SizedBox(
                           width: double.infinity,
                           height: 55,
-
                           child: ElevatedButton(
                             onPressed: login,
-
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xffF57C00),
-                              foregroundColor: Colors.white,
-                              elevation: 5,
-
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(15),
                               ),
+                              elevation: 3,
                             ),
-
                             child: const Text(
                               "SIGN IN",
                               style: TextStyle(
+                                color: Colors.white,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
-                                letterSpacing: 1,
                               ),
                             ),
                           ),
                         ),
 
-                        const SizedBox(height: 25),
+                        const SizedBox(height: 20),
 
-                        Row(
-                          children: const [
-                            Expanded(child: Divider(thickness: 1)),
+                        // Section Separator Row
+                        const Row(
+                          children: [
+                            Expanded(
+                              child: Divider(thickness: 1, color: Colors.grey),
+                            ),
                             Padding(
                               padding: EdgeInsets.symmetric(horizontal: 10),
-                              child: Text("OR"),
+                              child: Text(
+                                "OR",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.black54,
+                                ),
+                              ),
                             ),
-                            Expanded(child: Divider(thickness: 1)),
+                            Expanded(
+                              child: Divider(thickness: 1, color: Colors.grey),
+                            ),
                           ],
                         ),
 
-                        const SizedBox(height: 25),
+                        const SizedBox(height: 20),
 
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
+                        // Sign Up Action Route Link
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          crossAxisAlignment: WrapCrossAlignment.center,
                           children: [
                             const Text(
-                              "Don't have an account?",
-                              style: TextStyle(fontSize: 15),
+                              "Don't have an account? ",
+                              style: TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-
-                            TextButton(
-                              onPressed: () {
-                                // Signup Screen
+                            GestureDetector(
+                              onTap: () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const SignupScreen(),
+                                  ),
+                                );
                               },
 
                               child: const Text(
@@ -322,7 +352,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: TextStyle(
                                   color: Color(0xffF57C00),
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 16,
+                                  fontSize: 15,
                                 ),
                               ),
                             ),
@@ -334,6 +364,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 30),
 
+                  // Bottom App Branding Details
                   const Text(
                     "Powered by FRAD",
                     style: TextStyle(
@@ -342,27 +373,11 @@ class _LoginScreenState extends State<LoginScreen> {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-
-                  const SizedBox(height: 5),
-
+                  const SizedBox(height: 4),
                   const Text(
                     "Food Rescue & Donation App",
-                    style: TextStyle(color: Colors.white70, fontSize: 13),
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
-
-                  const SizedBox(height: 15),
-
-                  const Text(
-                    "Save Food • Save Money • Help Communities",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-
-                  const SizedBox(height: 20),
                 ],
               ),
             ),
