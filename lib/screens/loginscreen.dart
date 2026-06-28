@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frad/screens/providerdashboard.dart';
 import 'landingpage.dart';
 
 import 'signupscreen.dart';
@@ -27,6 +28,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void login() {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const ProviderDashboard()),
+    );
     if (_formKey.currentState!.validate()) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
