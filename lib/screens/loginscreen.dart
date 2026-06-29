@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:frad/screens/providerdashboard.dart';
+import '../services/auth-service.dart';
 import 'landingpage.dart';
-
+import 'customerdashboard.dart';
+import 'providerdashboard.dart';
 import 'signupscreen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -14,7 +15,14 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
 
+  final AuthService _authService = AuthService();
+
+  bool isLoading = false;
+
+  bool hidePassword = true;
+
   final TextEditingController emailController = TextEditingController();
+
   final TextEditingController passwordController = TextEditingController();
 
   bool isPasswordHidden = true;
@@ -27,17 +35,47 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  void login() {
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const ProviderDashboard()),
+  Future<void> login() async {
+    FocusScope.of(context).unfocus();
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    final result = await _authService.loginUser(
+      email: emailController.text.trim(),
+
+      password: passwordController.text.trim(),
     );
-    if (_formKey.currentState!.validate()) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Login functionality will be connected with Firebase."),
-        ),
-      );
+
+    setState(() {
+      isLoading = false;
+    });
+
+    if (result["success"] == true) {
+      if (!mounted) return;
+      String role = result["role"];
+
+      if (role == "Customer") {
+        Navigator.pushReplacement(
+          context,
+
+          MaterialPageRoute(builder: (_) => const CustomerDashboard()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+
+          MaterialPageRoute(builder: (_) => const ProviderDashboard()),
+        );
+      }
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result["message"])));
     }
   }
 
@@ -285,7 +323,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           width: double.infinity,
                           height: 55,
                           child: ElevatedButton(
-                            onPressed: login,
+                            onPressed: isLoading ? null : login,
+
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xffF57C00),
                               shape: RoundedRectangleBorder(
@@ -293,17 +332,26 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               elevation: 3,
                             ),
-                            child: const Text(
-                              "SIGN IN",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+
+                            child: isLoading
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 3,
+                                    ),
+                                  )
+                                : const Text(
+                                    "SIGN IN",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ),
-
                         const SizedBox(height: 20),
 
                         // Section Separator Row

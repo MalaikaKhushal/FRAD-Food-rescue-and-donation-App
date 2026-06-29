@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:frad/screens/loginscreen.dart';
-
-import 'landingpage.dart';
+import '../services/auth-service.dart';
+import 'loginscreen.dart';
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -12,6 +11,9 @@ class SignupScreen extends StatefulWidget {
 
 class _SignupScreenState extends State<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
+  final AuthService _authService = AuthService();
+
+  bool isLoading = false;
 
   final TextEditingController fullNameController = TextEditingController();
 
@@ -29,7 +31,63 @@ class _SignupScreenState extends State<SignupScreen> {
 
   bool agreeTerms = false;
 
-  String? selectedRole;
+  String selectedRole = "Customer";
+  Future<void> signUp() async {
+    if (fullNameController.text.trim().isEmpty ||
+        emailController.text.trim().isEmpty ||
+        phoneController.text.trim().isEmpty ||
+        passwordController.text.trim().isEmpty ||
+        confirmPasswordController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Please fill all fields")));
+
+      return;
+    }
+
+    if (passwordController.text != confirmPasswordController.text) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    String result = await _authService.signUpUser(
+      fullName: fullNameController.text,
+
+      email: emailController.text,
+
+      phone: phoneController.text,
+
+      password: passwordController.text,
+
+      role: selectedRole,
+    );
+
+    setState(() {
+      isLoading = false;
+    });
+
+    if (result == "success") {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Account Created Successfully")),
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+      );
+    } else {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(result)));
+    }
+  }
 
   final List<String> roles = [
     "Customer",
@@ -51,7 +109,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
   void register() {
     if (_formKey.currentState!.validate()) {
-      if (selectedRole == null) {
+      if (selectedRole.isEmpty) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(const SnackBar(content: Text("Please select a role")));
@@ -379,7 +437,7 @@ class _SignupScreenState extends State<SignupScreen> {
 
                           onChanged: (value) {
                             setState(() {
-                              selectedRole = value;
+                              selectedRole = "Customer";
                             });
                           },
                         ),
@@ -413,12 +471,11 @@ class _SignupScreenState extends State<SignupScreen> {
                           ],
                         ),
                         const SizedBox(height: 25),
-
                         SizedBox(
                           width: double.infinity,
                           height: 55,
                           child: ElevatedButton(
-                            onPressed: register,
+                            onPressed: signUp,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xffF57C00),
                               foregroundColor: Colors.white,
@@ -427,14 +484,22 @@ class _SignupScreenState extends State<SignupScreen> {
                                 borderRadius: BorderRadius.circular(15),
                               ),
                             ),
-                            child: const Text(
-                              "CREATE ACCOUNT",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1,
-                              ),
-                            ),
+                            child: isLoading
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 3,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Create Account",
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ),
                         ),
 
