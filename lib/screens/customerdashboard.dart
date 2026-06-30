@@ -273,7 +273,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
 
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(.15),
+            color: Colors.grey.withValues(alpha: .15),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -287,7 +287,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
           CircleAvatar(
             radius: 22,
 
-            backgroundColor: primaryColor.withOpacity(.15),
+            backgroundColor: primaryColor.withValues(alpha: .15),
 
             child: Icon(icon, color: primaryColor),
           ),
@@ -324,7 +324,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
 
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(.15),
+            color: Colors.grey.withValues(alpha: .15),
             blurRadius: 12,
             offset: const Offset(0, 5),
           ),
@@ -340,7 +340,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                 height: 75,
 
                 decoration: BoxDecoration(
-                  color: primaryColor.withOpacity(.12),
+                  color: primaryColor.withValues(alpha: .12),
 
                   borderRadius: BorderRadius.circular(15),
                 ),
