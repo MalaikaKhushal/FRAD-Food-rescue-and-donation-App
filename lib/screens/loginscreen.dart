@@ -69,7 +69,10 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacement(
           context,
 
-          MaterialPageRoute(builder: (_) => const ProviderDashboard()),
+          MaterialPageRoute(
+            builder: (_) =>
+                ProviderDashboard(name: result["name"], role: result["role"]),
+          ),
         );
       }
     } else {

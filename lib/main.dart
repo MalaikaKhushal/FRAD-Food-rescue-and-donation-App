@@ -35,7 +35,6 @@ class FRADApp extends StatelessWidget {
         '/signin': (context) => const LoginScreen(),
         '/createaccount': (context) => const SignupScreen(),
         '/customer': (context) => const CustomerDashboard(),
-        '/provider': (context) => const ProviderDashboard(),
       },
     );
   }

@@ -64,7 +64,7 @@ class _AppHeader extends StatelessWidget {
             width: 50,
             height: 50,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.95),
+              color: Colors.white.withValues(alpha: 0.95),
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(
@@ -127,7 +127,7 @@ class _HeroBanner extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xffC75B12).withOpacity(0.35),
+            color: const Color(0xffC75B12).withValues(alpha: 0.35),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -143,7 +143,7 @@ class _HeroBanner extends StatelessWidget {
               width: 130,
               height: 130,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.10),
+                color: Colors.white.withValues(alpha: 0.10),
                 shape: BoxShape.circle,
               ),
             ),
@@ -155,7 +155,7 @@ class _HeroBanner extends StatelessWidget {
               width: 160,
               height: 160,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.07),
+                color: Colors.white.withValues(alpha: 0.07),
                 shape: BoxShape.circle,
               ),
             ),
@@ -409,7 +409,7 @@ class _HowItWorks extends StatelessWidget {
                         Container(
                           width: 2,
                           height: 36,
-                          color: const Color(0xffF59E0B).withOpacity(0.4),
+                          color: const Color(0xffF59E0B).withValues(alpha: 0.4),
                         ),
                     ],
                   ),
@@ -533,7 +533,7 @@ class _KeyFeatures extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -640,7 +640,7 @@ class _ImpactStats extends StatelessWidget {
               return Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.18),
+                  color: Colors.white.withValues(alpha: 0.18),
                   borderRadius: BorderRadius.circular(14),
                 ),
                 child: Column(
@@ -692,7 +692,7 @@ class _AboutUs extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: const Color(0xffF59E0B).withOpacity(0.3),
+            color: const Color(0xffF59E0B).withValues(alpha: 0.3),
             width: 1.5,
           ),
         ),
@@ -766,7 +766,7 @@ class _ContactUs extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
+                  color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -897,7 +897,7 @@ class _PortalsSection extends StatelessWidget {
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
+                    color: Colors.black.withValues(alpha: 0.05),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),
@@ -992,7 +992,7 @@ class _Footer extends StatelessWidget {
                 width: 38,
                 height: 38,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.9),
+                  color: Colors.white.withValues(alpha: 0.9),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: const Icon(
@@ -1038,7 +1038,7 @@ class _Footer extends StatelessWidget {
             }).toList(),
           ),
           const SizedBox(height: 24),
-          Divider(color: Colors.white.withOpacity(0.3)),
+          Divider(color: Colors.white.withValues(alpha: 0.3)),
           const SizedBox(height: 16),
           const Text(
             '© 2025 FRAD — COMSATS Abbottabad',
