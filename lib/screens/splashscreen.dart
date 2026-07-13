@@ -160,12 +160,13 @@ class _SplashScreenState extends State<SplashScreen>
                             ],
                           ),
 
-                          child: const Icon(
-                            Icons.food_bank,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Image.asset(
+                              'assets/images/fradlogo.png',
 
-                            size: 80,
-
-                            color: Color(0xffE67E22),
+                              fit: BoxFit.contain,
+                            ),
                           ),
                         ),
                       ),

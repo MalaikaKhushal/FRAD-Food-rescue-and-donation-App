@@ -9,6 +9,8 @@ import 'screens/splashscreen.dart';
 import 'screens/landingpage.dart';
 import 'screens/loginscreen.dart';
 import 'screens/customerdashboard.dart';
+// import 'screens/food_details_screen.dart';
+// import 'screens/reservation_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +37,21 @@ class FRADApp extends StatelessWidget {
         '/signin': (context) => const LoginScreen(),
         '/createaccount': (context) => const SignupScreen(),
         '/customer': (context) => const CustomerDashboard(),
+
+        //         '/foodDetails': (context) => const FoodDetailsScreen(),
+
+        // '/reservation': (context) => const ReservationScreen(),
+        //         '/addFood': (_) => const AddFoodScreen(),
+
+        // '/editFood': (_) => const EditFoodScreen(),
+
+        // '/myListings': (_) => const MyListingsScreen(),
+
+        // '/providerReservations': (_) =>
+        //     const ProviderReservationsScreen(),
+
+        // '/donations': (_) =>
+        //     const ProviderDonationScreen(),
       },
     );
   }

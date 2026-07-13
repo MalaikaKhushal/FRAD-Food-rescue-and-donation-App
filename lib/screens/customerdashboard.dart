@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../models/food_model.dart';
+import '../models/user_model.dart';
+import '../services/firestore_service.dart';
+
 class CustomerDashboard extends StatefulWidget {
   const CustomerDashboard({super.key});
 
@@ -9,8 +13,27 @@ class CustomerDashboard extends StatefulWidget {
 
 class _CustomerDashboardState extends State<CustomerDashboard> {
   int currentIndex = 0;
+  String selectedCategory = "All";
+  String searchText = "";
+  final FirestoreService firestoreService = FirestoreService();
+
+  UserModel? currentUser;
 
   final Color primaryColor = const Color(0xffF57C00);
+  Future<void> loadUser() async {
+    currentUser = await firestoreService.getCurrentUserData();
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    loadUser();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +87,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                   ),
                 ),
 
-                child: const Padding(
+                child: Padding(
                   padding: EdgeInsets.all(22),
 
                   child: Column(
@@ -72,8 +95,13 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
 
                     children: [
                       Text(
-                        "Welcome 👋",
-                        style: TextStyle(color: Colors.white70, fontSize: 16),
+                        currentUser == null
+                            ? "Loading..."
+                            : "Good Evening,\n${currentUser!.fullName}",
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
 
                       SizedBox(height: 6),
@@ -107,6 +135,12 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                 padding: const EdgeInsets.symmetric(horizontal: 16),
 
                 child: TextField(
+                  onChanged: (value) {
+                    setState(() {
+                      searchText = value.toLowerCase();
+                    });
+                  },
+
                   decoration: InputDecoration(
                     hintText: "Search Food...",
 
@@ -185,32 +219,136 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                 ),
               ),
 
-              const SizedBox(height: 18),
-              foodCard(
-                foodName: "Chicken Burger",
-                provider: "Al Baik Restaurant",
-                price: "Rs.250",
-                originalPrice: "Rs.600",
-                pickupTime: "Pickup Before 10:00 PM",
-                isDonation: false,
+              StreamBuilder<List<FoodModel>>(
+                stream: firestoreService.getAllFood(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return const Center(child: Text("Something went wrong"));
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text(
+                          "No Food Available",
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ),
+                    );
+                  }
+
+                  List<FoodModel> foods = snapshot.data!;
+
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: foods.length,
+                    itemBuilder: (context, index) {
+                      FoodModel food = foods[index];
+
+                      return foodCard(food: food);
+                    },
+                  );
+                },
+              ),
+              const SizedBox(height: 25),
+
+              //------------------------------------
+              // Donation Food
+              //------------------------------------
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 18),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Donation Food",
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                ),
               ),
 
-              foodCard(
-                foodName: "Chocolate Cake",
-                provider: "Fresh Bakers",
-                price: "FREE",
-                originalPrice: "Donation",
-                pickupTime: "Pickup Before 09:00 PM",
-                isDonation: true,
+              const SizedBox(height: 15),
+
+              StreamBuilder<List<FoodModel>>(
+                stream: firestoreService.getDonationFood(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Text("No Donation Food Available"),
+                    );
+                  }
+
+                  List<FoodModel> donationFoods = snapshot.data!;
+
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: donationFoods.length,
+                    itemBuilder: (context, index) {
+                      return foodCard(food: donationFoods[index]);
+                    },
+                  );
+                },
               ),
 
-              foodCard(
-                foodName: "Chicken Biryani",
-                provider: "COMSATS Hostel Mess",
-                price: "Rs.180",
-                originalPrice: "Rs.350",
-                pickupTime: "Pickup Before 08:30 PM",
-                isDonation: false,
+              const SizedBox(height: 25),
+
+              //------------------------------------
+              // Recommended
+              //------------------------------------
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 18),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Recommended For You",
+                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 15),
+
+              StreamBuilder<List<FoodModel>>(
+                stream: firestoreService.getAllFood(),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) {
+                    return const SizedBox();
+                  }
+
+                  List<FoodModel> foods = snapshot.data!;
+
+                  foods = foods.where((food) {
+                    bool matchesCategory =
+                        selectedCategory == "All" ||
+                        food.providerType == selectedCategory;
+
+                    bool matchesSearch = food.foodName.toLowerCase().contains(
+                      searchText,
+                    );
+
+                    return matchesCategory && matchesSearch;
+                  }).toList();
+
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: foods.length > 3 ? 3 : foods.length,
+                    itemBuilder: (context, index) {
+                      return foodCard(food: foods[index]);
+                    },
+                  );
+                },
               ),
 
               const SizedBox(height: 100),
@@ -261,41 +399,45 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
   //---------------------------------------------------
 
   Widget categoryCard(IconData icon, String title) {
-    return Container(
-      width: 90,
+    bool selected = selectedCategory == title;
 
-      margin: const EdgeInsets.only(right: 14),
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          selectedCategory = title;
+        });
+      },
+      child: Container(
+        width: 95,
+        margin: const EdgeInsets.only(right: 12),
 
-      decoration: BoxDecoration(
-        color: Colors.white,
+        decoration: BoxDecoration(
+          color: selected ? primaryColor : Colors.white,
 
-        borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(18),
 
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: .15),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+          boxShadow: [
+            BoxShadow(color: Colors.grey.withOpacity(.15), blurRadius: 10),
+          ],
+        ),
 
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
 
-        children: [
-          CircleAvatar(
-            radius: 22,
+          children: [
+            Icon(icon, color: selected ? Colors.white : primaryColor),
 
-            backgroundColor: primaryColor.withValues(alpha: .15),
+            const SizedBox(height: 8),
 
-            child: Icon(icon, color: primaryColor),
-          ),
-
-          const SizedBox(height: 10),
-
-          Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
-        ],
+            Text(
+              title,
+              style: TextStyle(
+                color: selected ? Colors.white : Colors.black,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -304,156 +446,148 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
   // FOOD CARD
   //---------------------------------------------------
 
-  Widget foodCard({
-    required String foodName,
-    required String provider,
-    required String price,
-    required String originalPrice,
-    required String pickupTime,
-    required bool isDonation,
-  }) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  Widget foodCard({required FoodModel food}) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.pushNamed(context, "/foodDetails", arguments: food);
+      },
 
-      padding: const EdgeInsets.all(16),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
 
-      decoration: BoxDecoration(
-        color: Colors.white,
+        padding: const EdgeInsets.all(16),
 
-        borderRadius: BorderRadius.circular(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(.15),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
 
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withValues(alpha: .15),
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 75,
+                  height: 75,
 
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 75,
-                height: 75,
-
-                decoration: BoxDecoration(
-                  color: primaryColor.withValues(alpha: .12),
-
-                  borderRadius: BorderRadius.circular(15),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(15),
+                    image: DecorationImage(
+                      image: NetworkImage(food.imageUrl),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
                 ),
 
-                child: Icon(Icons.fastfood, size: 40, color: primaryColor),
-              ),
+                const SizedBox(width: 15),
 
-              const SizedBox(width: 15),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
 
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        food.foodName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                        ),
+                      ),
 
-                  children: [
-                    Text(
-                      foodName,
+                      const SizedBox(height: 5),
 
-                      style: const TextStyle(
-                        fontSize: 18,
+                      Text(food.providerName),
+
+                      const SizedBox(height: 5),
+
+                      Text(
+                        food.pickupTime,
+                        style: const TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+
+                if (food.donation)
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 5,
+                    ),
+
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+
+                    child: const Text(
+                      "FREE",
+                      style: TextStyle(
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
+                  ),
+              ],
+            ),
 
-                    const SizedBox(height: 5),
+            const SizedBox(height: 15),
 
-                    Text(provider),
-
-                    const SizedBox(height: 5),
-
-                    Text(
-                      pickupTime,
-
-                      style: const TextStyle(color: Colors.grey),
-                    ),
-                  ],
+            Row(
+              children: [
+                Text(
+                  "Rs ${food.discountPrice}",
+                  style: TextStyle(
+                    color: primaryColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
                 ),
-              ),
 
-              if (isDonation)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 5,
+                const SizedBox(width: 10),
+
+                Text(
+                  "Rs ${food.originalPrice}",
+                  style: const TextStyle(
+                    decoration: TextDecoration.lineThrough,
+                    color: Colors.grey,
+                  ),
+                ),
+
+                const Spacer(),
+
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryColor,
                   ),
 
-                  decoration: BoxDecoration(
-                    color: Colors.green,
+                  onPressed: () async {
+                    await firestoreService.reserveFood(
+                      foodId: food.foodId,
+                      providerId: food.providerId,
+                    );
 
-                    borderRadius: BorderRadius.circular(20),
-                  ),
+                    if (!mounted) return;
+
+                    Navigator.pushNamed(context, "/reservation");
+                  },
 
                   child: const Text(
-                    "FREE",
-
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
+                    "Reserve",
+                    style: TextStyle(color: Colors.white),
                   ),
                 ),
-            ],
-          ),
-
-          const SizedBox(height: 18),
-
-          Row(
-            children: [
-              Text(
-                price,
-
-                style: TextStyle(
-                  color: primaryColor,
-
-                  fontWeight: FontWeight.bold,
-
-                  fontSize: 20,
-                ),
-              ),
-
-              const SizedBox(width: 10),
-
-              Text(
-                originalPrice,
-
-                style: const TextStyle(
-                  decoration: TextDecoration.lineThrough,
-                  color: Colors.grey,
-                ),
-              ),
-
-              const Spacer(),
-
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor,
-
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-
-                onPressed: () {
-                  // Food Details Screen
-                },
-
-                child: const Text(
-                  "Reserve",
-                  style: TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-        ],
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

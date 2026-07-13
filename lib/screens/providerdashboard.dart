@@ -3,6 +3,9 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'loginscreen.dart';
+import '../models/user_model.dart';
+import '../services/firestore_service.dart';
+import '../models/food_model.dart';
 
 class ProviderDashboard extends StatefulWidget {
   final String name;
@@ -15,6 +18,15 @@ class ProviderDashboard extends StatefulWidget {
 }
 
 class _ProviderDashboardState extends State<ProviderDashboard> {
+  @override
+  void initState() {
+    super.initState();
+    loadUser();
+  }
+
+  final FirestoreService firestoreService = FirestoreService();
+
+  UserModel? currentUser;
   final Color primaryColor = const Color(0xffF57C00);
 
   int currentIndex = 0;
@@ -24,36 +36,6 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
   int? hoveredFood;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
-
-  final List<Map<String, dynamic>> stats = [
-    {
-      "icon": Icons.fastfood,
-      "title": "Food Listings",
-      "value": "12",
-      "color": Colors.orange,
-    },
-
-    {
-      "icon": Icons.shopping_bag,
-      "title": "Orders",
-      "value": "08",
-      "color": Colors.green,
-    },
-
-    {
-      "icon": Icons.favorite,
-      "title": "Donations",
-      "value": "24",
-      "color": Colors.red,
-    },
-
-    {
-      "icon": Icons.star,
-      "title": "Rating",
-      "value": "4.9",
-      "color": Colors.blue,
-    },
-  ];
 
   final List<Map<String, dynamic>> actions = [
     {"icon": Icons.add_box_rounded, "title": "Add Food"},
@@ -65,37 +47,19 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
     {"icon": Icons.volunteer_activism, "title": "Donations"},
   ];
 
-  final List<Map<String, dynamic>> foods = [
-    {
-      "icon": Icons.lunch_dining,
-      "title": "Chicken Burger",
-      "qty": "5 Available",
-      "price": "Rs.250",
-      "time": "Before 10:00 PM",
-    },
-
-    {
-      "icon": Icons.bakery_dining,
-      "title": "Chocolate Cake",
-      "qty": "2 Available",
-      "price": "Rs.600",
-      "time": "Before 09:00 PM",
-    },
-
-    {
-      "icon": Icons.rice_bowl,
-      "title": "Chicken Biryani",
-      "qty": "8 Available",
-      "price": "Rs.180",
-      "time": "Before 08:30 PM",
-    },
-  ];
-
   bool get isDesktop =>
       kIsWeb ||
       defaultTargetPlatform == TargetPlatform.windows ||
       defaultTargetPlatform == TargetPlatform.macOS ||
       defaultTargetPlatform == TargetPlatform.linux;
+
+  Future<void> loadUser() async {
+    currentUser = await firestoreService.getCurrentUserData();
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   Future<void> logout() async {
     await _auth.signOut();
@@ -223,7 +187,9 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                     const SizedBox(height: 8),
 
                     Text(
-                      widget.name,
+                      currentUser == null
+                          ? "Loading..."
+                          : currentUser!.fullName,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 28,
@@ -245,19 +211,12 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                       ),
 
                       child: Text(
-                        widget.role,
+                        currentUser == null ? "" : currentUser!.role,
                         style: const TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    const Text(
-                      "Reduce Food Waste • Help Communities",
-                      style: TextStyle(color: Colors.white, fontSize: 15),
                     ),
                   ],
                 ),
@@ -286,26 +245,46 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18),
 
-                child: GridView.builder(
+                child: GridView.count(
                   shrinkWrap: true,
-
                   physics: const NeverScrollableScrollPhysics(),
 
-                  itemCount: stats.length,
+                  crossAxisCount: 2,
 
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
+                  crossAxisSpacing: 16,
+                  mainAxisSpacing: 16,
 
-                    crossAxisSpacing: 16,
+                  childAspectRatio: 1.15,
 
-                    mainAxisSpacing: 16,
+                  children: [
+                    firebaseDashboardCard(
+                      title: "Food Listings",
+                      icon: Icons.fastfood,
+                      color: Colors.orange,
+                      stream: firestoreService.getTotalListings(),
+                    ),
 
-                    childAspectRatio: 1.15,
-                  ),
+                    firebaseDashboardCard(
+                      title: "Orders",
+                      icon: Icons.shopping_bag,
+                      color: Colors.green,
+                      stream: firestoreService.getTotalReservations(),
+                    ),
 
-                  itemBuilder: (context, index) {
-                    return dashboardCard(index, stats[index]);
-                  },
+                    firebaseDashboardCard(
+                      title: "Donations",
+                      icon: Icons.favorite,
+                      color: Colors.red,
+                      stream: firestoreService.getTotalDonations(),
+                    ),
+
+                    firebaseDashboardCard(
+                      title: "Rating",
+                      icon: Icons.star,
+                      color: Colors.blue,
+                      stream: Stream.value(5),
+                    ),
+                  ],
                 ),
               ),
 
@@ -373,12 +352,39 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
 
               const SizedBox(height: 18),
 
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: foods.length,
-                itemBuilder: (context, index) {
-                  return foodCard(index, foods[index]);
+              StreamBuilder<List<FoodModel>>(
+                stream: firestoreService.getProviderFood(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (snapshot.hasError) {
+                    return const Center(child: Text("Something went wrong"));
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return const Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Center(
+                        child: Text(
+                          "No Food Listings Yet",
+                          style: TextStyle(fontSize: 18),
+                        ),
+                      ),
+                    );
+                  }
+
+                  List<FoodModel> foods = snapshot.data!;
+
+                  return ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: foods.length,
+                    itemBuilder: (context, index) {
+                      return foodCard(foods[index]);
+                    },
+                  );
                 },
               ),
 
@@ -395,9 +401,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
         backgroundColor: primaryColor,
         elevation: 6,
         onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Add Food screen coming soon")),
-          );
+          Navigator.pushNamed(context, "/addFood");
         },
         icon: const Icon(Icons.add, color: Colors.white),
         label: const Text(
@@ -454,6 +458,68 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
           BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
         ],
       ),
+    );
+  }
+
+  Widget firebaseDashboardCard({
+    required String title,
+    required IconData icon,
+    required Color color,
+    required Stream<int> stream,
+  }) {
+    return StreamBuilder<int>(
+      stream: stream,
+      builder: (context, snapshot) {
+        String value = "0";
+
+        if (snapshot.hasData) {
+          value = snapshot.data.toString();
+        }
+
+        return Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: const [
+              BoxShadow(
+                color: Colors.black12,
+                blurRadius: 6,
+                offset: Offset(0, 4),
+              ),
+            ],
+          ),
+
+          child: Padding(
+            padding: const EdgeInsets.all(15),
+
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: color.withOpacity(.12),
+                  child: Icon(icon, color: color),
+                ),
+
+                const SizedBox(height: 12),
+
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                Text(title, textAlign: TextAlign.center),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -535,9 +601,27 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
         child: InkWell(
           borderRadius: BorderRadius.circular(18),
           onTap: () {
-            ScaffoldMessenger.of(
-              context,
-            ).showSnackBar(SnackBar(content: Text("${item["title"]} clicked")));
+            switch (item["title"]) {
+              case "Add Food":
+                Navigator.pushNamed(context, "/addFood");
+
+                break;
+
+              case "My Listings":
+                Navigator.pushNamed(context, "/myListings");
+
+                break;
+
+              case "Reservations":
+                Navigator.pushNamed(context, "/providerReservations");
+
+                break;
+
+              case "Donations":
+                Navigator.pushNamed(context, "/donations");
+
+                break;
+            }
           },
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -562,61 +646,148 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
     );
   }
 
-  Widget foodCard(int index, Map<String, dynamic> item) {
-    final hovered = hoveredFood == index;
+  Widget foodCard(FoodModel food) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 250),
 
-    return MouseRegion(
-      onEnter: (_) => setState(() => hoveredFood = index),
-      onExit: (_) => setState(() => hoveredFood = null),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-        transform: hovered
-            ? (Matrix4.identity()..translate(0, -4))
-            : Matrix4.identity(),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(.08),
-              blurRadius: hovered ? 12 : 6,
-              offset: const Offset(0, 4),
+      margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
+
+      decoration: BoxDecoration(
+        color: Colors.white,
+
+        borderRadius: BorderRadius.circular(18),
+
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.08),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(16),
+
+        leading: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+
+          child: Image.network(
+            food.imageUrl,
+            width: 60,
+            height: 60,
+            fit: BoxFit.cover,
+
+            errorBuilder: (_, __, ___) {
+              return CircleAvatar(
+                backgroundColor: primaryColor.withOpacity(.12),
+
+                child: Icon(Icons.fastfood, color: primaryColor),
+              );
+            },
+          ),
+        ),
+
+        title: Text(
+          food.foodName,
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
+
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+
+          children: [
+            const SizedBox(height: 6),
+
+            Text("${food.quantity} Available"),
+
+            Text("Pickup: ${food.pickupTime}"),
+
+            Text(food.location),
+          ],
+        ),
+
+        trailing: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+
+          children: [
+            Text(
+              "Rs ${food.discountPrice}",
+              style: TextStyle(
+                color: primaryColor,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+
+            Row(
+              mainAxisSize: MainAxisSize.min,
+
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+
+                  onPressed: () {
+                    Navigator.pushNamed(context, "/editFood", arguments: food);
+                  },
+                ),
+
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+
+                  onPressed: () {
+                    showDeleteDialog(food);
+                  },
+                ),
+              ],
             ),
           ],
         ),
-        child: ListTile(
-          contentPadding: const EdgeInsets.all(16),
-          leading: CircleAvatar(
-            radius: 28,
-            backgroundColor: primaryColor.withOpacity(.12),
-            child: Icon(item["icon"], color: primaryColor),
-          ),
-          title: Text(
-            item["title"],
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(item["qty"]),
-                const SizedBox(height: 4),
-                Text(item["time"]),
-              ],
-            ),
-          ),
-          trailing: Text(
-            item["price"],
-            style: TextStyle(
-              color: primaryColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
-          ),
-        ),
       ),
+    );
+  }
+
+  Future<void> showDeleteDialog(FoodModel food) async {
+    showDialog(
+      context: context,
+
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Delete Food"),
+
+          content: Text("Delete ${food.foodName} ?"),
+
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+
+              child: const Text("Cancel"),
+            ),
+
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+
+              onPressed: () async {
+                Navigator.pop(context);
+
+                String result = await firestoreService.deleteFood(food.foodId);
+
+                if (!mounted) return;
+
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(result)));
+              },
+
+              child: const Text(
+                "Delete",
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }
