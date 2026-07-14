@@ -1176,7 +1176,8 @@ class _SocialIconButton extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(50),
           onTap: () async {
-            final uri = Uri.parse(url);
+            final uri = Uri.parse("https://github.com/MalaikaKhushal/");
+            final ur = Uri.parse("https://Linkedin.com/MalaikaKhushal/");
             if (await canLaunchUrl(uri)) {
               await launchUrl(uri, mode: LaunchMode.externalApplication);
             }
