@@ -15,8 +15,16 @@ dependencies:
   firebase_core: ^4.11.0
   firebase_auth: ^6.5.4
   cloud_firestore: ^6.6.0
-  firebase_storage: ^13.0.2
-  image_picker: ^1.1.2
+  url_launcher: ^6.3.2
+  visibility_detector: ^0.4.0+2
+
+firebase_storage: ^13.0.2
+image_picker: ^1.1.2
+
+visibility_detector: ^0.4.0+2
+url_launcher: ^6.3.2
+
+
 
 dev_dependencies:
   flutter_test:

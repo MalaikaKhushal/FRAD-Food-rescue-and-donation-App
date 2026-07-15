@@ -1,21 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:visibility_detector/visibility_detector.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'loginscreen.dart';
-import 'package:flutter/material.dart';
 
 // ─────────────────────────────────────────────────────────────
-//  FRAD – Landing Page  (landingpage.dart)
+//  FRAD – Landing Page  (landingpage.dart)  — Animated Version
 //  Place this file in:  lib/screens/landingpage.dart
 // ─────────────────────────────────────────────────────────────
 class LandingPage extends StatelessWidget {
   const LandingPage({super.key});
 
-  // ── Brand Colors ──
   static const Color primary = Color(0xffC75B12);
   static const Color amber = Color(0xffF59E0B);
   static const Color lightGold = Color(0xffFFD89B);
-  static const Color bgLight = Color(0xffFDFBF7); // Soft elegant cream
+  static const Color bgLight = Color(0xffFDFBF7);
   static const Color cardWhite = Color(0xffFFFFFF);
-  static const Color textDark = Color(0xff1E293B); // Modern deep slate
+  static const Color textDark = Color(0xff1E293B);
+
+  // ── Social links — replace these with your real profile URLs ──
+  static const String linkedInUrl =
+      'https://www.linkedin.com/in/malaikakhushal/';
+  static const String githubUrl = ' https://github.com/MalaikaKhushal';
 
   @override
   Widget build(BuildContext context) {
@@ -35,20 +40,233 @@ class LandingPage extends StatelessWidget {
                     : 0,
               ),
               child: Column(
-                children: const [
-                  _HeroBanner(),
-                  _ProvidersSection(),
-                  _HowItWorks(),
-                  _KeyFeatures(),
-                  _ImpactStats(),
-                  _AboutUs(),
-                  _ContactUs(),
-                  _PortalsSection(),
+                children: [
+                  const _HeroBanner(),
+                  _RevealOnScroll(
+                    revealKey: 'providers',
+                    child: const _ProvidersSection(),
+                  ),
+                  _RevealOnScroll(
+                    revealKey: 'howitworks',
+                    child: const _HowItWorks(),
+                  ),
+                  _RevealOnScroll(
+                    revealKey: 'features',
+                    child: const _KeyFeatures(),
+                  ),
+                  _RevealOnScroll(
+                    revealKey: 'impact',
+                    child: const _ImpactStats(),
+                  ),
+                  _RevealOnScroll(revealKey: 'about', child: const _AboutUs()),
+                  _RevealOnScroll(
+                    revealKey: 'contact',
+                    child: const _ContactUs(),
+                  ),
+                  _RevealOnScroll(
+                    revealKey: 'portals',
+                    child: const _PortalsSection(),
+                  ),
                 ],
               ),
             ),
             const _Footer(),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  REUSABLE: Scroll reveal wrapper (fade + slide up on scroll-in)
+// ══════════════════════════════════════════════════════════════
+class _RevealOnScroll extends StatefulWidget {
+  final Widget child;
+  final String revealKey;
+  const _RevealOnScroll({required this.child, required this.revealKey});
+
+  @override
+  State<_RevealOnScroll> createState() => _RevealOnScrollState();
+}
+
+class _RevealOnScrollState extends State<_RevealOnScroll>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
+  bool _triggered = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _fade = CurvedAnimation(parent: _controller, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOutCubic));
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  void _onVisibilityChanged(VisibilityInfo info) {
+    if (!_triggered && info.visibleFraction > 0.15) {
+      _triggered = true;
+      _controller.forward();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return VisibilityDetector(
+      key: Key(widget.revealKey),
+      onVisibilityChanged: _onVisibilityChanged,
+      child: FadeTransition(
+        opacity: _fade,
+        child: SlideTransition(position: _slide, child: widget.child),
+      ),
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  REUSABLE: Floating glow wrapper (for CTA buttons)
+// ══════════════════════════════════════════════════════════════
+class _FloatingGlowButton extends StatefulWidget {
+  final Widget child;
+  final Color glowColor;
+  const _FloatingGlowButton({required this.child, required this.glowColor});
+
+  @override
+  State<_FloatingGlowButton> createState() => _FloatingGlowButtonState();
+}
+
+class _FloatingGlowButtonState extends State<_FloatingGlowButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    )..repeat(reverse: true);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final t = _controller.value;
+        final dy = -4 * t;
+        final glowRadius = 10 + (12 * t);
+        final glowAlpha = (70 + 70 * t).toInt();
+        return Transform.translate(
+          offset: Offset(0, dy),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: widget.glowColor.withAlpha(glowAlpha),
+                  blurRadius: glowRadius,
+                  spreadRadius: 1,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: child,
+          ),
+        );
+      },
+      child: widget.child,
+    );
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  REUSABLE: Typewriter text
+// ══════════════════════════════════════════════════════════════
+class _TypewriterText extends StatefulWidget {
+  final String text;
+  final TextStyle style;
+  const _TypewriterText({required this.text, required this.style});
+
+  @override
+  State<_TypewriterText> createState() => _TypewriterTextState();
+}
+
+class _TypewriterTextState extends State<_TypewriterText> {
+  String _shown = '';
+  int _index = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTyping();
+  }
+
+  Future<void> _startTyping() async {
+    while (mounted && _index < widget.text.length) {
+      await Future.delayed(const Duration(milliseconds: 45));
+      if (!mounted) return;
+      setState(() {
+        _index++;
+        _shown = widget.text.substring(0, _index);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(_shown, textAlign: TextAlign.center, style: widget.style);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════
+//  REUSABLE: Hover-lift wrapper for cards (scale + shadow + border)
+// ══════════════════════════════════════════════════════════════
+class _HoverLift extends StatefulWidget {
+  final Widget Function(bool hovering) builder;
+  const _HoverLift({required this.builder});
+
+  @override
+  State<_HoverLift> createState() => _HoverLiftState();
+}
+
+class _HoverLiftState extends State<_HoverLift> {
+  bool _hovering = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovering = true),
+      onExit: (_) => setState(() => _hovering = false),
+      child: GestureDetector(
+        onTapDown: (_) => setState(() => _hovering = true),
+        onTapUp: (_) => setState(() => _hovering = false),
+        onTapCancel: () => setState(() => _hovering = false),
+        child: AnimatedScale(
+          scale: _hovering ? 1.04 : 1.0,
+          duration: const Duration(milliseconds: 180),
+          curve: Curves.easeOut,
+          child: widget.builder(_hovering),
         ),
       ),
     );
@@ -120,17 +338,8 @@ class _AppHeader extends StatelessWidget {
                     'Food Rescue & Donation App',
                     style: TextStyle(
                       fontSize: 12,
-                      color: const Color(0xE6FFFFFF),
+                      color: Color(0xE6FFFFFF),
                       fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  SizedBox(height: 2),
-                  Text(
-                    'Save Food • Save Money • Help Communities',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: Colors.white70,
-                      fontStyle: FontStyle.italic,
                     ),
                   ),
                 ],
@@ -144,7 +353,7 @@ class _AppHeader extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════
-//  SECTION 2 – Hero Banner
+//  SECTION 2 – Hero Banner (with typewriter + floating buttons)
 // ══════════════════════════════════════════════════════════════
 class _HeroBanner extends StatelessWidget {
   const _HeroBanner();
@@ -176,20 +385,20 @@ class _HeroBanner extends StatelessWidget {
       ),
       child: Stack(
         children: [
-          Positioned(
+          const Positioned(
             top: -30,
             right: -30,
             child: CircleAvatar(
               radius: 70,
-              backgroundColor: const Color.fromRGBO(255, 255, 255, 0.08),
+              backgroundColor: Color.fromRGBO(255, 255, 255, 0.08),
             ),
           ),
-          Positioned(
+          const Positioned(
             bottom: -50,
             left: -40,
             child: CircleAvatar(
               radius: 90,
-              backgroundColor: const Color.fromRGBO(255, 255, 255, 0.05),
+              backgroundColor: Color.fromRGBO(255, 255, 255, 0.05),
             ),
           ),
           Column(
@@ -217,20 +426,21 @@ class _HeroBanner extends StatelessWidget {
                   fontWeight: FontWeight.w500,
                 ),
               ),
+              const SizedBox(height: 10),
+              _TypewriterText(
+                text: 'Save Food • Save Money • Help Communities',
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.white70,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
               const SizedBox(height: 36),
               Row(
                 children: [
                   Expanded(
-                    child: Container(
-                      decoration: BoxDecoration(
-                        boxShadow: [
-                          BoxShadow(
-                            color: const Color.fromRGBO(0, 0, 0, 0.08),
-                            blurRadius: 15,
-                            offset: const Offset(0, 5),
-                          ),
-                        ],
-                      ),
+                    child: _FloatingGlowButton(
+                      glowColor: Colors.white,
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.pushReplacementNamed(context, '/signin');
@@ -256,23 +466,26 @@ class _HeroBanner extends StatelessWidget {
                   ),
                   const SizedBox(width: 16),
                   Expanded(
-                    child: OutlinedButton(
-                      onPressed: () {
-                        Navigator.pushNamed(context, '/createaccount');
-                      },
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white, width: 2),
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
+                    child: _FloatingGlowButton(
+                      glowColor: LandingPage.lightGold,
+                      child: OutlinedButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/createaccount');
+                        },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white, width: 2),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
                         ),
-                      ),
-                      child: const Text(
-                        'Create Account',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 16,
+                        child: const Text(
+                          'Create Account',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
@@ -288,7 +501,7 @@ class _HeroBanner extends StatelessWidget {
 }
 
 // ══════════════════════════════════════════════════════════════
-// SECTION 3 – Providers Section
+// SECTION 3 – Providers Section (badges now animate on hover/tap)
 // ══════════════════════════════════════════════════════════════
 class _ProvidersSection extends StatelessWidget {
   const _ProvidersSection();
@@ -320,41 +533,55 @@ class _ProviderBadge extends StatelessWidget {
   const _ProviderBadge({required this.icon, required this.label});
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(right: 14, bottom: 8, top: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: BoxDecoration(
-        color: LandingPage.cardWhite,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xffE2E8F0)),
-        boxShadow: [
-          BoxShadow(
-            color: const Color.fromRGBO(0, 0, 0, 0.03),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: LandingPage.primary, size: 22),
-          const SizedBox(width: 10),
-          Text(
-            label,
-            style: const TextStyle(
-              fontWeight: FontWeight.bold,
-              color: LandingPage.textDark,
-              fontSize: 14,
+    return Padding(
+      padding: const EdgeInsets.only(right: 14, bottom: 8, top: 4),
+      child: _HoverLift(
+        builder: (hovering) => AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+          decoration: BoxDecoration(
+            color: LandingPage.cardWhite,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: hovering ? LandingPage.amber : const Color(0xffE2E8F0),
+              width: hovering ? 1.5 : 1,
             ),
+            boxShadow: [
+              BoxShadow(
+                color: hovering
+                    ? LandingPage.primary.withAlpha(60)
+                    : const Color.fromRGBO(0, 0, 0, 0.03),
+                blurRadius: hovering ? 16 : 8,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
-        ],
+          child: Row(
+            children: [
+              AnimatedScale(
+                scale: hovering ? 1.15 : 1.0,
+                duration: const Duration(milliseconds: 180),
+                child: Icon(icon, color: LandingPage.primary, size: 22),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                label,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: LandingPage.textDark,
+                  fontSize: 14,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
 }
 
 // ══════════════════════════════════════════════════════════════
-// SECTION 4 – How It Works
+// SECTION 4 – How It Works (step cards animate on hover/tap)
 // ══════════════════════════════════════════════════════════════
 class _HowItWorks extends StatelessWidget {
   const _HowItWorks();
@@ -400,58 +627,75 @@ class _StepCard extends StatelessWidget {
   });
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: LandingPage.cardWhite,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xffE2E8F0)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            stepNumber,
-            style: const TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w900,
-              color: LandingPage.amber,
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: _HoverLift(
+        builder: (hovering) => AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: LandingPage.cardWhite,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: hovering ? LandingPage.amber : const Color(0xffE2E8F0),
+              width: hovering ? 1.5 : 1,
             ),
+            boxShadow: hovering
+                ? [
+                    BoxShadow(
+                      color: LandingPage.primary.withAlpha(45),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ]
+                : [],
           ),
-          const SizedBox(width: 18),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: LandingPage.textDark,
-                  ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                stepNumber,
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w900,
+                  color: LandingPage.amber,
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  description,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Color(0xff64748B),
-                    height: 1.4,
-                  ),
+              ),
+              const SizedBox(width: 18),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: LandingPage.textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      description,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        color: Color(0xff64748B),
+                        height: 1.4,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 // ══════════════════════════════════════════════════════════════
-// SECTION 5 – Key Features
+// SECTION 5 – Key Features (feature cards animate on hover/tap)
 // ══════════════════════════════════════════════════════════════
 class _KeyFeatures extends StatelessWidget {
   const _KeyFeatures();
@@ -497,38 +741,57 @@ class _FeatureItem extends StatelessWidget {
   const _FeatureItem({required this.icon, required this.title});
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: LandingPage.cardWhite,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xffE2E8F0)),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: LandingPage.primary.withAlpha(26),
-            child: Icon(icon, color: LandingPage.primary),
+    return _HoverLift(
+      builder: (hovering) => AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: LandingPage.cardWhite,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: hovering ? LandingPage.amber : const Color(0xffE2E8F0),
+            width: hovering ? 1.5 : 1,
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 15,
-                color: LandingPage.textDark,
+          boxShadow: hovering
+              ? [
+                  BoxShadow(
+                    color: LandingPage.primary.withAlpha(45),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ]
+              : [],
+        ),
+        child: Row(
+          children: [
+            AnimatedScale(
+              scale: hovering ? 1.12 : 1.0,
+              duration: const Duration(milliseconds: 180),
+              child: CircleAvatar(
+                backgroundColor: LandingPage.primary.withAlpha(26),
+                child: Icon(icon, color: LandingPage.primary),
               ),
             ),
-          ),
-        ],
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15,
+                  color: LandingPage.textDark,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
 // ══════════════════════════════════════════════════════════════
-// SECTION 6 – Impact Stats
+// SECTION 6 – Impact Stats (light card, no dark bg — counts up on scroll)
 // ══════════════════════════════════════════════════════════════
 class _ImpactStats extends StatelessWidget {
   const _ImpactStats();
@@ -538,15 +801,23 @@ class _ImpactStats extends StatelessWidget {
       margin: const EdgeInsets.symmetric(vertical: 24, horizontal: 20),
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: LandingPage.textDark,
+        color: LandingPage.cardWhite,
         borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xffE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: const Color.fromRGBO(0, 0, 0, 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Column(
         children: [
           const Text(
             'Our Shared Success Metrics',
             style: TextStyle(
-              color: Colors.white,
+              color: LandingPage.textDark,
               fontSize: 20,
               fontWeight: FontWeight.bold,
             ),
@@ -555,9 +826,9 @@ class _ImpactStats extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: const [
-              _StatItem(metric: '50K+', title: 'Meals Saved'),
-              _StatItem(metric: '120+', title: 'NGO Partners'),
-              _StatItem(metric: '40 Tons', title: 'CO2 Saved'),
+              _StatItem(value: 50, suffix: 'K+', title: 'Meals Saved'),
+              _StatItem(value: 120, suffix: '+', title: 'NGO Partners'),
+              _StatItem(value: 40, suffix: ' Tons', title: 'CO2 Saved'),
             ],
           ),
         ],
@@ -566,32 +837,60 @@ class _ImpactStats extends StatelessWidget {
   }
 }
 
-class _StatItem extends StatelessWidget {
-  final String metric;
+class _StatItem extends StatefulWidget {
+  final double value;
+  final String suffix;
   final String title;
-  const _StatItem({required this.metric, required this.title});
+  const _StatItem({
+    required this.value,
+    required this.suffix,
+    required this.title,
+  });
+
+  @override
+  State<_StatItem> createState() => _StatItemState();
+}
+
+class _StatItemState extends State<_StatItem> {
+  bool _visible = false;
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Text(
-          metric,
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.w900,
-            color: LandingPage.amber,
+    return VisibilityDetector(
+      key: Key('stat_${widget.title}'),
+      onVisibilityChanged: (info) {
+        if (!_visible && info.visibleFraction > 0.4) {
+          setState(() => _visible = true);
+        }
+      },
+      child: Column(
+        children: [
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: _visible ? widget.value : 0),
+            duration: const Duration(milliseconds: 1800),
+            curve: Curves.easeOutCubic,
+            builder: (context, val, child) {
+              return Text(
+                '${val.toInt()}${widget.suffix}',
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.w900,
+                  color: LandingPage.primary,
+                ),
+              );
+            },
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          title,
-          style: const TextStyle(
-            color: Colors.white70,
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
+          const SizedBox(height: 4),
+          Text(
+            widget.title,
+            style: const TextStyle(
+              color: Color(0xff64748B),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -606,16 +905,35 @@ class _AboutUs extends StatelessWidget {
     return _buildSectionLayout(
       title: 'About Our Mission',
       subtitle: 'Zero waste, zero hunger—our continuous target objective.',
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: LandingPage.cardWhite,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: const Color(0xffE2E8F0)),
-        ),
-        child: const Text(
-          'FRAD provides centralized, cloud-enabled infrastructure linking agricultural businesses, dining vendors, and commercial sectors with charity organizations. We optimize excess provisions securely to remove nutritional deficits completely.',
-          style: TextStyle(color: Color(0xff475569), fontSize: 14, height: 1.6),
+      child: _HoverLift(
+        builder: (hovering) => AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: LandingPage.cardWhite,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: hovering ? LandingPage.amber : const Color(0xffE2E8F0),
+              width: hovering ? 1.5 : 1,
+            ),
+            boxShadow: hovering
+                ? [
+                    BoxShadow(
+                      color: LandingPage.primary.withAlpha(35),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : [],
+          ),
+          child: const Text(
+            'FRAD provides centralized, cloud-enabled infrastructure linking agricultural businesses, dining vendors, and commercial sectors with charity organizations. We optimize excess provisions securely to remove nutritional deficits completely.',
+            style: TextStyle(
+              color: Color(0xff475569),
+              fontSize: 14,
+              height: 1.6,
+            ),
+          ),
         ),
       ),
     );
@@ -660,25 +978,31 @@ class _ContactTile extends StatelessWidget {
   const _ContactTile({required this.icon, required this.title});
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Icon(icon, color: LandingPage.primary, size: 22),
-        const SizedBox(width: 14),
-        Text(
-          title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: LandingPage.textDark,
-            fontSize: 15,
+    return _HoverLift(
+      builder: (hovering) => Row(
+        children: [
+          AnimatedScale(
+            scale: hovering ? 1.15 : 1.0,
+            duration: const Duration(milliseconds: 180),
+            child: Icon(icon, color: LandingPage.primary, size: 22),
           ),
-        ),
-      ],
+          const SizedBox(width: 14),
+          Text(
+            title,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: hovering ? LandingPage.primary : LandingPage.textDark,
+              fontSize: 15,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
 
 // ══════════════════════════════════════════════════════════════
-// SECTION 9 – Portals Section
+// SECTION 9 – Portals Section (hover scale + glow)
 // ══════════════════════════════════════════════════════════════
 class _PortalsSection extends StatelessWidget {
   const _PortalsSection();
@@ -712,55 +1036,77 @@ class _PortalCard extends StatelessWidget {
   final String title;
   final String roles;
   const _PortalCard({required this.title, required this.roles});
+
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-      decoration: BoxDecoration(
-        color: LandingPage.cardWhite,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xffE2E8F0)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: LandingPage.textDark,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  roles,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: Color(0xff94A3B8),
-                  ),
-                ),
-              ],
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: _HoverLift(
+        builder: (hovering) => AnimatedContainer(
+          duration: const Duration(milliseconds: 180),
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+          decoration: BoxDecoration(
+            color: LandingPage.cardWhite,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: hovering ? LandingPage.amber : const Color(0xffE2E8F0),
+              width: hovering ? 1.5 : 1,
             ),
+            boxShadow: hovering
+                ? [
+                    BoxShadow(
+                      color: LandingPage.primary.withAlpha(30),
+                      blurRadius: 14,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : [],
           ),
-          const Icon(
-            Icons.arrow_forward_ios_rounded,
-            size: 14,
-            color: Color(0xff94A3B8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: LandingPage.textDark,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      roles,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Color(0xff94A3B8),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              AnimatedSlide(
+                offset: hovering ? const Offset(0.15, 0) : Offset.zero,
+                duration: const Duration(milliseconds: 180),
+                child: const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  size: 14,
+                  color: Color(0xff94A3B8),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 }
 
 // ══════════════════════════════════════════════════════════════
-// SECTION 10 – Footer
+// SECTION 10 – Footer (light bg, no dark color + social icons)
 // ══════════════════════════════════════════════════════════════
 class _Footer extends StatelessWidget {
   const _Footer();
@@ -768,21 +1114,40 @@ class _Footer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      color: LandingPage.textDark,
+      color: LandingPage.bgLight,
       padding: const EdgeInsets.symmetric(vertical: 36, horizontal: 24),
       child: Column(
-        children: const [
-          Text(
+        children: [
+          const Text(
             'FRAD Ecosystem Alliance',
             style: TextStyle(
-              color: Colors.white,
+              color: LandingPage.textDark,
               fontWeight: FontWeight.bold,
               fontSize: 16,
               letterSpacing: 0.5,
             ),
           ),
-          SizedBox(height: 8),
-          Text(
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              _SocialIconButton(
+                icon: Icons
+                    .business_center_rounded, // swap for LinkedIn logo asset if you add one
+                url: LandingPage.linkedInUrl,
+                tooltip: 'LinkedIn',
+              ),
+              SizedBox(width: 14),
+              _SocialIconButton(
+                icon: Icons
+                    .code_rounded, // swap for GitHub logo asset if you add one
+                url: LandingPage.githubUrl,
+                tooltip: 'GitHub',
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text(
             '© 2026 FRAD Inc. Saving sustainability values worldwide.',
             textAlign: TextAlign.center,
             style: TextStyle(color: Color(0xff94A3B8), fontSize: 12),
@@ -793,7 +1158,63 @@ class _Footer extends StatelessWidget {
   }
 }
 
-// Helper Layout builder to ensure universal section structure padding
+class _SocialIconButton extends StatelessWidget {
+  final IconData icon;
+  final String url;
+  final String tooltip;
+  const _SocialIconButton({
+    required this.icon,
+    required this.url,
+    required this.tooltip,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return _HoverLift(
+      builder: (hovering) => Tooltip(
+        message: tooltip,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(50),
+          onTap: () async {
+            final uri = Uri.parse("https://github.com/MalaikaKhushal/");
+            final ur = Uri.parse("https://Linkedin.com/MalaikaKhushal/");
+            if (await canLaunchUrl(uri)) {
+              await launchUrl(uri, mode: LaunchMode.externalApplication);
+            }
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: hovering ? LandingPage.primary : LandingPage.cardWhite,
+              border: Border.all(
+                color: hovering ? LandingPage.primary : const Color(0xffE2E8F0),
+              ),
+              boxShadow: hovering
+                  ? [
+                      BoxShadow(
+                        color: LandingPage.primary.withAlpha(60),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : [],
+            ),
+            child: Icon(
+              icon,
+              size: 20,
+              color: hovering ? Colors.white : LandingPage.textDark,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Helper Layout builder
 Widget _buildSectionLayout({
   required String title,
   required String subtitle,
