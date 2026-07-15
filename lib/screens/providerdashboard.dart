@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:frad/screens/add_food_screen.dart';
 
 import 'loginscreen.dart';
 import '../models/user_model.dart';
@@ -21,6 +22,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
   @override
   void initState() {
     super.initState();
+
     loadUser();
   }
 
@@ -254,7 +256,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
 
-                  childAspectRatio: 1.15,
+                  childAspectRatio: 1.0,
 
                   children: [
                     firebaseDashboardCard(
@@ -490,31 +492,35 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
           ),
 
           child: Padding(
-            padding: const EdgeInsets.all(15),
+            padding: const EdgeInsets.all(10),
 
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
 
               children: [
                 CircleAvatar(
-                  radius: 24,
+                  radius: 22,
                   backgroundColor: color.withOpacity(.12),
                   child: Icon(icon, color: color),
                 ),
 
-                const SizedBox(height: 12),
+                const SizedBox(height: 8),
 
                 Text(
                   value,
                   style: const TextStyle(
-                    fontSize: 24,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 4),
 
-                Text(title, textAlign: TextAlign.center),
+                Text(
+                  title,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 12),
+                ),
               ],
             ),
           ),
@@ -647,16 +653,12 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
   }
 
   Widget foodCard(FoodModel food) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 8),
-
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
-
         borderRadius: BorderRadius.circular(18),
-
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(.08),
@@ -665,83 +667,108 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
           ),
         ],
       ),
-
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-
-          child: Image.network(
-            food.imageUrl,
-            width: 60,
-            height: 60,
-            fit: BoxFit.cover,
-
-            errorBuilder: (_, __, ___) {
-              return CircleAvatar(
-                backgroundColor: primaryColor.withOpacity(.12),
-
-                child: Icon(Icons.fastfood, color: primaryColor),
-              );
-            },
-          ),
-        ),
-
-        title: Text(
-          food.foodName,
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-
-          children: [
-            const SizedBox(height: 6),
-
-            Text("${food.quantity} Available"),
-
-            Text("Pickup: ${food.pickupTime}"),
-
-            Text(food.location),
-          ],
-        ),
-
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-
-          children: [
-            Text(
-              "Rs ${food.discountPrice}",
-              style: TextStyle(
-                color: primaryColor,
-                fontWeight: FontWeight.bold,
-              ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              food.imageUrl,
+              width: 60,
+              height: 60,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) {
+                return Container(
+                  width: 60,
+                  height: 60,
+                  decoration: BoxDecoration(
+                    color: primaryColor.withOpacity(.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(Icons.fastfood, color: primaryColor),
+                );
+              },
             ),
-
-            Row(
-              mainAxisSize: MainAxisSize.min,
-
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.edit, color: Colors.blue),
-
-                  onPressed: () {
-                    Navigator.pushNamed(context, "/editFood", arguments: food);
-                  },
+                Text(
+                  food.foodName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-
-                IconButton(
-                  icon: const Icon(Icons.delete, color: Colors.red),
-
-                  onPressed: () {
-                    showDeleteDialog(food);
-                  },
+                const SizedBox(height: 6),
+                Text(
+                  "${food.quantity} Available",
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                ),
+                Text(
+                  "Pickup: ${food.pickupTime}",
+                  style: const TextStyle(fontSize: 13, color: Colors.black87),
+                ),
+                Text(
+                  food.location,
+                  style: const TextStyle(fontSize: 13, color: Colors.black54),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                "Rs ${food.discountPrice}",
+                style: TextStyle(
+                  color: primaryColor,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AddFoodScreen(),
+                        ),
+                      );
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.all(6),
+                      child: Icon(Icons.edit, color: Colors.blue, size: 20),
+                    ),
+                  ),
+                  InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () {
+                      showDeleteDialog(food);
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.all(6),
+                      child: Icon(Icons.delete, color: Colors.red, size: 20),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

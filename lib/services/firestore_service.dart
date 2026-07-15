@@ -96,9 +96,27 @@ class FirestoreService {
   // UPDATE FOOD
   // ==========================================================
 
-  Future<String> updateFood(String foodId, Map<String, dynamic> data) async {
+  Future<String> updateFood({
+    required String foodId,
+    required String foodName,
+    required int quantity,
+    required double discountPrice,
+    required String location,
+    required String pickupTime,
+    required String imageUrl,
+    required bool donation,
+  }) async {
     try {
-      await _firestore.collection("food_listings").doc(foodId).update(data);
+      await _firestore.collection("food_listings").doc(foodId).update({
+        "foodName": foodName,
+        "quantity": quantity,
+        "discountPrice": discountPrice,
+        "location": location,
+        "pickupTime": pickupTime,
+        "imageUrl": imageUrl,
+        "donation": donation,
+        "updatedAt": FieldValue.serverTimestamp(),
+      });
 
       return "success";
     } catch (e) {
@@ -238,5 +256,61 @@ class FirestoreService {
         .where("donation", isEqualTo: true)
         .snapshots()
         .map((snapshot) => snapshot.docs.length);
+  }
+}
+
+Stream<List<FoodModel>> getProviderFood() {
+  final uid = FirebaseAuth.instance.currentUser!.uid;
+
+  return FirebaseFirestore.instance
+      .collection("foods")
+      .where("providerId", isEqualTo: uid)
+      .orderBy("createdAt", descending: true)
+      .snapshots()
+      .map((snapshot) {
+        return snapshot.docs
+            .map((doc) => FoodModel.fromMap(doc.data()))
+            .toList();
+      });
+}
+
+Stream<int> getTotalListings() {
+  final uid = FirebaseAuth.instance.currentUser!.uid;
+
+  return FirebaseFirestore.instance
+      .collection("foods")
+      .where("providerId", isEqualTo: uid)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.length);
+}
+
+Stream<int> getTotalReservations() {
+  final uid = FirebaseAuth.instance.currentUser!.uid;
+
+  return FirebaseFirestore.instance
+      .collection("reservations")
+      .where("providerId", isEqualTo: uid)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.length);
+}
+
+Stream<int> getTotalDonations() {
+  final uid = FirebaseAuth.instance.currentUser!.uid;
+
+  return FirebaseFirestore.instance
+      .collection("foods")
+      .where("providerId", isEqualTo: uid)
+      .where("donation", isEqualTo: true)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.length);
+}
+
+Future<String> deleteFood(String foodId) async {
+  try {
+    await FirebaseFirestore.instance.collection("foods").doc(foodId).delete();
+
+    return "Food deleted successfully";
+  } catch (e) {
+    return e.toString();
   }
 }

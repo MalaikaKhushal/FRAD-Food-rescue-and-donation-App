@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'screens/add_food_screen.dart';
 import 'package:frad/screens/providerdashboard.dart';
 import 'package:frad/screens/signupscreen.dart';
 
@@ -9,6 +10,7 @@ import 'screens/splashscreen.dart';
 import 'screens/landingpage.dart';
 import 'screens/loginscreen.dart';
 import 'screens/customerdashboard.dart';
+
 // import 'screens/food_details_screen.dart';
 // import 'screens/reservation_screen.dart';
 
@@ -41,7 +43,7 @@ class FRADApp extends StatelessWidget {
         //         '/foodDetails': (context) => const FoodDetailsScreen(),
 
         // '/reservation': (context) => const ReservationScreen(),
-        //         '/addFood': (_) => const AddFoodScreen(),
+        '/addFood': (context) => const AddFoodScreen(),
 
         // '/editFood': (_) => const EditFoodScreen(),
 
