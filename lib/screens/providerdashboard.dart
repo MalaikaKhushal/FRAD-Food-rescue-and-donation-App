@@ -742,11 +742,11 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                   InkWell(
                     borderRadius: BorderRadius.circular(20),
                     onTap: () {
-                      Navigator.push(
+                      // ✅ Edit screen ko food data pass karo
+                      Navigator.pushNamed(
                         context,
-                        MaterialPageRoute(
-                          builder: (_) => const AddFoodScreen(),
-                        ),
+                        "/editFood",
+                        arguments: food,
                       );
                     },
                     child: const Padding(

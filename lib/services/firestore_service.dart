@@ -19,12 +19,20 @@ class FirestoreService {
   // ==========================================================
 
   Future<UserModel> getCurrentUserData() async {
-    DocumentSnapshot doc = await _firestore
-        .collection("users")
-        .doc(currentUser!.uid)
-        .get();
+    try {
+      DocumentSnapshot doc = await _firestore
+          .collection("users")
+          .doc(currentUser!.uid)
+          .get();
 
-    return UserModel.fromMap(doc.data() as Map<String, dynamic>);
+      if (!doc.exists) {
+        throw Exception("User not found");
+      }
+
+      return UserModel.fromMap(doc.data() as Map<String, dynamic>);
+    } catch (e) {
+      throw Exception("Error getting user data: $e");
+    }
   }
 
   // ==========================================================
@@ -38,7 +46,9 @@ class FirestoreService {
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
-              .map((doc) => FoodModel.fromMap(doc.data()))
+              .map(
+                (doc) => FoodModel.fromMap(doc.data() as Map<String, dynamic>),
+              )
               .toList();
         });
   }
@@ -51,10 +61,13 @@ class FirestoreService {
     return _firestore
         .collection("food_listings")
         .where("donation", isEqualTo: true)
+        .orderBy("createdAt", descending: true)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
-              .map((doc) => FoodModel.fromMap(doc.data()))
+              .map(
+                (doc) => FoodModel.fromMap(doc.data() as Map<String, dynamic>),
+              )
               .toList();
         });
   }
@@ -64,13 +77,20 @@ class FirestoreService {
   // ==========================================================
 
   Stream<List<FoodModel>> getProviderFood() {
+    if (currentUser == null) {
+      return Stream.value([]);
+    }
+
     return _firestore
         .collection("food_listings")
         .where("providerId", isEqualTo: currentUser!.uid)
+        .orderBy("createdAt", descending: true)
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
-              .map((doc) => FoodModel.fromMap(doc.data()))
+              .map(
+                (doc) => FoodModel.fromMap(doc.data() as Map<String, dynamic>),
+              )
               .toList();
         });
   }
@@ -81,6 +101,10 @@ class FirestoreService {
 
   Future<String> addFood(FoodModel food) async {
     try {
+      if (food.foodId.isEmpty) {
+        throw Exception("Food ID cannot be empty");
+      }
+
       await _firestore
           .collection("food_listings")
           .doc(food.foodId)
@@ -88,39 +112,31 @@ class FirestoreService {
 
       return "success";
     } catch (e) {
-      return e.toString();
+      return "Error adding food: ${e.toString()}";
     }
   }
 
   // ==========================================================
-  // UPDATE FOOD
+  // UPDATE FOOD (✅ FIXED - Using Timestamp)
   // ==========================================================
 
-  Future<String> updateFood({
-    required String foodId,
-    required String foodName,
-    required int quantity,
-    required double discountPrice,
-    required String location,
-    required String pickupTime,
-    required String imageUrl,
-    required bool donation,
-  }) async {
+  Future<String> updateFood(String foodId, Map<String, dynamic> data) async {
     try {
+      if (foodId.isEmpty) {
+        throw Exception("Food ID cannot be empty");
+      }
+
+      // Remove updatedAt if it already exists in data
+      data.remove("updatedAt");
+
       await _firestore.collection("food_listings").doc(foodId).update({
-        "foodName": foodName,
-        "quantity": quantity,
-        "discountPrice": discountPrice,
-        "location": location,
-        "pickupTime": pickupTime,
-        "imageUrl": imageUrl,
-        "donation": donation,
-        "updatedAt": FieldValue.serverTimestamp(),
+        ...data,
+        "updatedAt": Timestamp.now(), // ✅ Use Timestamp.now()
       });
 
       return "success";
     } catch (e) {
-      return e.toString();
+      return "Error updating food: ${e.toString()}";
     }
   }
 
@@ -130,32 +146,20 @@ class FirestoreService {
 
   Future<String> deleteFood(String foodId) async {
     try {
+      if (foodId.isEmpty) {
+        throw Exception("Food ID cannot be empty");
+      }
+
       await _firestore.collection("food_listings").doc(foodId).delete();
 
       return "success";
     } catch (e) {
-      return e.toString();
-    }
-  }
-  // ==========================================================
-  // EDIT FOOD
-  // ==========================================================
-
-  Future<String> editFood({
-    required String foodId,
-    required Map<String, dynamic> data,
-  }) async {
-    try {
-      await _firestore.collection("food_listings").doc(foodId).update(data);
-
-      return "success";
-    } catch (e) {
-      return e.toString();
+      return "Error deleting food: ${e.toString()}";
     }
   }
 
   // ==========================================================
-  // RESERVE FOOD
+  // RESERVE FOOD (✅ FIXED - Using Timestamp)
   // ==========================================================
 
   Future<String> reserveFood({
@@ -163,6 +167,10 @@ class FirestoreService {
     required String providerId,
   }) async {
     try {
+      if (currentUser == null) {
+        throw Exception("User not logged in");
+      }
+
       String reservationId = _firestore.collection("reservations").doc().id;
 
       await _firestore.collection("reservations").doc(reservationId).set({
@@ -171,12 +179,12 @@ class FirestoreService {
         "customerId": currentUser!.uid,
         "providerId": providerId,
         "status": "Reserved",
-        "reservedAt": Timestamp.now(),
+        "reservedAt": Timestamp.now(), // ✅ Use Timestamp.now()
       });
 
       return "success";
     } catch (e) {
-      return e.toString();
+      return "Error reserving food: ${e.toString()}";
     }
   }
 
@@ -185,9 +193,14 @@ class FirestoreService {
   // ==========================================================
 
   Stream<QuerySnapshot> getCustomerReservations() {
+    if (currentUser == null) {
+      return const Stream.empty();
+    }
+
     return _firestore
         .collection("reservations")
         .where("customerId", isEqualTo: currentUser!.uid)
+        .orderBy("reservedAt", descending: true)
         .snapshots();
   }
 
@@ -196,36 +209,58 @@ class FirestoreService {
   // ==========================================================
 
   Stream<QuerySnapshot> getProviderReservations() {
+    if (currentUser == null) {
+      return const Stream.empty();
+    }
+
     return _firestore
         .collection("reservations")
         .where("providerId", isEqualTo: currentUser!.uid)
+        .orderBy("reservedAt", descending: true)
         .snapshots();
   }
 
   // ==========================================================
-  // COMPLETE ORDER
+  // COMPLETE ORDER (✅ FIXED - Using Timestamp)
   // ==========================================================
 
-  Future<void> completeOrder(String reservationId) async {
-    await _firestore.collection("reservations").doc(reservationId).update({
-      "status": "Completed",
-    });
+  Future<String> completeOrder(String reservationId) async {
+    try {
+      await _firestore.collection("reservations").doc(reservationId).update({
+        "status": "Completed",
+        "completedAt": Timestamp.now(), // ✅ Use Timestamp.now()
+      });
+      return "success";
+    } catch (e) {
+      return "Error completing order: ${e.toString()}";
+    }
   }
 
   // ==========================================================
-  // CANCEL ORDER
+  // CANCEL ORDER (✅ FIXED - Using Timestamp)
   // ==========================================================
 
-  Future<void> cancelOrder(String reservationId) async {
-    await _firestore.collection("reservations").doc(reservationId).update({
-      "status": "Cancelled",
-    });
+  Future<String> cancelOrder(String reservationId) async {
+    try {
+      await _firestore.collection("reservations").doc(reservationId).update({
+        "status": "Cancelled",
+        "cancelledAt": Timestamp.now(), // ✅ Use Timestamp.now()
+      });
+      return "success";
+    } catch (e) {
+      return "Error cancelling order: ${e.toString()}";
+    }
   }
+
   // ==========================================================
   // TOTAL FOOD LISTINGS
   // ==========================================================
 
   Stream<int> getTotalListings() {
+    if (currentUser == null) {
+      return Stream.value(0);
+    }
+
     return _firestore
         .collection("food_listings")
         .where("providerId", isEqualTo: currentUser!.uid)
@@ -238,6 +273,10 @@ class FirestoreService {
   // ==========================================================
 
   Stream<int> getTotalReservations() {
+    if (currentUser == null) {
+      return Stream.value(0);
+    }
+
     return _firestore
         .collection("reservations")
         .where("providerId", isEqualTo: currentUser!.uid)
@@ -250,6 +289,10 @@ class FirestoreService {
   // ==========================================================
 
   Stream<int> getTotalDonations() {
+    if (currentUser == null) {
+      return Stream.value(0);
+    }
+
     return _firestore
         .collection("food_listings")
         .where("providerId", isEqualTo: currentUser!.uid)
@@ -257,60 +300,24 @@ class FirestoreService {
         .snapshots()
         .map((snapshot) => snapshot.docs.length);
   }
-}
 
-Stream<List<FoodModel>> getProviderFood() {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
+  // ==========================================================
+  // GET FOOD BY ID
+  // ==========================================================
 
-  return FirebaseFirestore.instance
-      .collection("foods")
-      .where("providerId", isEqualTo: uid)
-      .orderBy("createdAt", descending: true)
-      .snapshots()
-      .map((snapshot) {
-        return snapshot.docs
-            .map((doc) => FoodModel.fromMap(doc.data()))
-            .toList();
-      });
-}
+  Future<FoodModel?> getFoodById(String foodId) async {
+    try {
+      DocumentSnapshot doc = await _firestore
+          .collection("food_listings")
+          .doc(foodId)
+          .get();
 
-Stream<int> getTotalListings() {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-
-  return FirebaseFirestore.instance
-      .collection("foods")
-      .where("providerId", isEqualTo: uid)
-      .snapshots()
-      .map((snapshot) => snapshot.docs.length);
-}
-
-Stream<int> getTotalReservations() {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-
-  return FirebaseFirestore.instance
-      .collection("reservations")
-      .where("providerId", isEqualTo: uid)
-      .snapshots()
-      .map((snapshot) => snapshot.docs.length);
-}
-
-Stream<int> getTotalDonations() {
-  final uid = FirebaseAuth.instance.currentUser!.uid;
-
-  return FirebaseFirestore.instance
-      .collection("foods")
-      .where("providerId", isEqualTo: uid)
-      .where("donation", isEqualTo: true)
-      .snapshots()
-      .map((snapshot) => snapshot.docs.length);
-}
-
-Future<String> deleteFood(String foodId) async {
-  try {
-    await FirebaseFirestore.instance.collection("foods").doc(foodId).delete();
-
-    return "Food deleted successfully";
-  } catch (e) {
-    return e.toString();
+      if (doc.exists) {
+        return FoodModel.fromMap(doc.data() as Map<String, dynamic>);
+      }
+      return null;
+    } catch (e) {
+      throw Exception("Error getting food: $e");
+    }
   }
 }

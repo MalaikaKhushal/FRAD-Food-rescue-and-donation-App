@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:frad/models/food_model.dart';
 import 'screens/add_food_screen.dart';
 import 'package:frad/screens/providerdashboard.dart';
 import 'package:frad/screens/signupscreen.dart';
@@ -44,6 +45,13 @@ class FRADApp extends StatelessWidget {
 
         // '/reservation': (context) => const ReservationScreen(),
         '/addFood': (context) => const AddFoodScreen(),
+        "/editFood": (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          if (args is FoodModel) {
+            return AddFoodScreen(food: args);
+          }
+          return const AddFoodScreen();
+        },
 
         // '/editFood': (_) => const EditFoodScreen(),
 
