@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/food_model.dart';
 import '../models/user_model.dart';
 import '../services/firestore_service.dart';
+import '../widgets/notification_bell.dart';
 
 class CustomerDashboard extends StatefulWidget {
   const CustomerDashboard({super.key});
@@ -51,10 +52,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
         ),
 
         actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.notifications_none, color: Colors.white),
-          ),
+          NotificationBell(role: 'receiver'),
 
           const Padding(
             padding: EdgeInsets.only(right: 15),

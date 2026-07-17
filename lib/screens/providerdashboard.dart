@@ -7,6 +7,7 @@ import 'loginscreen.dart';
 import '../models/user_model.dart';
 import '../services/firestore_service.dart';
 import '../models/food_model.dart';
+import '../widgets/notification_bell.dart';
 
 class ProviderDashboard extends StatefulWidget {
   final String name;
@@ -63,16 +64,93 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
     }
   }
 
+  // Replace your existing `logout()` function with this:
+
   Future<void> logout() async {
+    final bool? confirm = await showGeneralDialog<bool>(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: "Logout",
+      barrierColor: Colors.black.withOpacity(0.4),
+      transitionDuration: const Duration(milliseconds: 250),
+      pageBuilder: (context, anim1, anim2) => const SizedBox.shrink(),
+      transitionBuilder: (context, anim1, anim2, child) {
+        return Transform.scale(
+          scale: Curves.easeOutBack.transform(anim1.value),
+          child: Opacity(
+            opacity: anim1.value,
+            child: AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              icon: Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.red.withOpacity(0.1),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.logout_rounded,
+                  color: Colors.red,
+                  size: 28,
+                ),
+              ),
+              title: const Text(
+                "Logout",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              content: const Text(
+                "Are you sure you want to logout?",
+                textAlign: TextAlign.center,
+              ),
+              actionsAlignment: MainAxisAlignment.center,
+              actions: [
+                OutlinedButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.grey.shade700,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.red,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 22,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text("Logout"),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+
+    if (confirm != true) return;
+
     await _auth.signOut();
 
     if (!mounted) return;
 
     Navigator.pushAndRemoveUntil(
       context,
-
       MaterialPageRoute(builder: (_) => const LoginScreen()),
-
       (route) => false,
     );
   }
@@ -98,12 +176,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
         ),
 
         actions: [
-          IconButton(
-            onPressed: () {},
-
-            icon: const Icon(Icons.notifications_none, color: Colors.white),
-          ),
-
+          NotificationBell(role: 'provider'),
           PopupMenuButton<String>(
             icon: const CircleAvatar(
               radius: 18,
@@ -751,7 +824,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                     },
                     child: const Padding(
                       padding: EdgeInsets.all(6),
-                      child: Icon(Icons.edit, color: Colors.blue, size: 20),
+                      child: Icon(Icons.edit, color: Colors.orange),
                     ),
                   ),
                   InkWell(

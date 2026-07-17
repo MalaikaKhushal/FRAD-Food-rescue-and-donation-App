@@ -7,6 +7,47 @@ import '../models/user_model.dart';
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  // Add these methods inside your FirestoreService class (firestore_service.dart)
+
+  /// Call this whenever a provider successfully adds a new food listing.
+  /// It creates a notification document that all receivers/customers can see.
+  Future<void> createNewFoodNotification({
+    required String foodName,
+    required String providerName,
+    required String location,
+  }) async {
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'title': 'New Food Available!',
+      'message': '$providerName just posted "$foodName" near $location',
+      'targetRole': 'receiver', // only customers/receivers should see this
+      'createdAt': FieldValue.serverTimestamp(),
+      'readBy': <String>[], // list of userIds who have seen/read this
+    });
+  }
+
+  /// Stream of notifications relevant to the current logged-in user's role.
+  /// Pass 'receiver' on the customer dashboard, 'provider' on the provider dashboard.
+  Stream<QuerySnapshot> getNotificationsForRole(String role) {
+    return FirebaseFirestore.instance
+        .collection('notifications')
+        .where('targetRole', isEqualTo: role)
+        .orderBy('createdAt', descending: true)
+        .limit(30)
+        .snapshots();
+  }
+
+  /// Marks a notification as read by the current user (so the badge count drops).
+  Future<void> markNotificationRead(String notificationId) async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+
+    await FirebaseFirestore.instance
+        .collection('notifications')
+        .doc(notificationId)
+        .update({
+          'readBy': FieldValue.arrayUnion([uid]),
+        });
+  }
 
   // ==========================================================
   // CURRENT USER
