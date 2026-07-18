@@ -243,59 +243,55 @@ class FirestoreService {
   }
 
   // ==========================================================
-  // RESERVE FOOD
+  // RESERVE FOOD (UPDATED TO MATCH RESERVATION MODEL)
   // ==========================================================
-
   Future<String> reserveFood({required FoodModel food}) async {
     try {
       final user = _auth.currentUser;
-
       if (user == null) {
         return "Please login first";
       }
 
+      // Customer ka data nikalne ke liye
       final customerDoc = await _firestore
           .collection("users")
           .doc(user.uid)
           .get();
-
       final customerData = customerDoc.data();
 
-      // Create document reference
+      // Naya reservation document ID generate karein
       DocumentReference reservationRef = _firestore
           .collection("reservations")
           .doc();
 
+      // Agar food donation hai to price 0, warna discountPrice
+      double finalPrice = food.donation ? 0.0 : food.discountPrice;
+
       await reservationRef.set({
         "reservationId": reservationRef.id,
-        "status": "Pending",
-        "createdAt": FieldValue.serverTimestamp(),
-        "reservedAt": Timestamp.now(),
+        "foodId": food.foodId,
 
-        // Customer
+        // Customer Details
         "customerId": user.uid,
-        "customerName": customerData?["fullName"] ?? "",
-        "customerEmail": customerData?["email"] ?? "",
+        "customerName": customerData?["fullName"] ?? "Anonymous Customer",
 
-        // Provider
+        // Provider Details
         "providerId": food.providerId,
         "providerName": food.providerName,
-        "providerType": food.providerType,
 
-        // Food
-        "foodId": food.foodId,
+        // Food Details (Directly mapped to ReservationModel fields)
         "foodName": food.foodName,
-        "description": food.description,
-        "category": food.category,
-        "quantity": food.quantity,
-        "originalPrice": food.originalPrice,
-        "discountPrice": food.discountPrice,
-        "donation": food.donation,
+        "imageUrl": food.imageUrl,
+        "quantity": 1, // Default reservation quantity
+        "price": finalPrice,
+
+        // Pickup details
         "pickupDate": food.pickupDate,
         "pickupTime": food.pickupTime,
-        "expiryTime": food.expiryTime,
-        "location": food.location,
-        "imageUrl": food.imageUrl,
+
+        // Status & Timestamp
+        "status": "Pending",
+        "createdAt": FieldValue.serverTimestamp(),
       });
 
       return "success";
@@ -303,7 +299,6 @@ class FirestoreService {
       return e.toString();
     }
   }
-
   // ==========================================================
   // GET CUSTOMER RESERVATIONS
   // ==========================================================
@@ -383,21 +378,24 @@ class FirestoreService {
   }
 
   // ==========================================================
-  // PROVIDER RESERVATIONS
+  // GET PROVIDER RESERVATIONS (SAFE & STREAMING)
   // ==========================================================
-
-  Stream<QuerySnapshot> getProviderReservations() {
-    if (currentUser == null) {
-      return const Stream.empty();
+  Stream<List<ReservationModel>> getProviderReservations() {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return Stream.value([]);
     }
 
     return _firestore
         .collection("reservations")
-        .where("providerId", isEqualTo: currentUser!.uid)
-        .orderBy("reservedAt", descending: true)
-        .snapshots();
+        .where("providerId", isEqualTo: user.uid)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            return ReservationModel.fromMap(doc.data());
+          }).toList();
+        });
   }
-
   // ==========================================================
   // COMPLETE ORDER (✅ FIXED - Using Timestamp)
   // ==========================================================
