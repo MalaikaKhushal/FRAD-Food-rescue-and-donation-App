@@ -5,6 +5,7 @@ import '../models/food_model.dart';
 import '../models/user_model.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
+import '../models/reservation_model.dart';
 
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -200,51 +201,184 @@ class FirestoreService {
       return "Error deleting food: ${e.toString()}";
     }
   }
-
   // ==========================================================
-  // RESERVE FOOD (✅ FIXED - Using Timestamp)
+  // GET CUSTOMER ORDERS
   // ==========================================================
 
-  Future<String> reserveFood({
-    required String foodId,
-    required String providerId,
-  }) async {
+  Stream<List<ReservationModel>> getCustomerOrders() {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      return Stream.value([]);
+    }
+
+    return _firestore
+        .collection("reservations")
+        .where("customerId", isEqualTo: user.uid)
+        .orderBy("createdAt", descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => ReservationModel.fromMap(doc.data()))
+              .toList();
+        });
+  }
+  // ==========================================================
+  // UPDATE RESERVATION STATUS
+  // ==========================================================
+
+  Future<String> updateReservationStatus(
+    String reservationId,
+    String status,
+  ) async {
     try {
-      if (currentUser == null) {
-        throw Exception("User not logged in");
-      }
-
-      String reservationId = _firestore.collection("reservations").doc().id;
-
-      await _firestore.collection("reservations").doc(reservationId).set({
-        "reservationId": reservationId,
-        "foodId": foodId,
-        "customerId": currentUser!.uid,
-        "providerId": providerId,
-        "status": "Reserved",
-        "reservedAt": Timestamp.now(), // ✅ Use Timestamp.now()
+      await _firestore.collection("reservations").doc(reservationId).update({
+        "status": status,
       });
 
       return "success";
     } catch (e) {
-      return "Error reserving food: ${e.toString()}";
+      return e.toString();
     }
   }
 
   // ==========================================================
-  // CUSTOMER RESERVATIONS
+  // RESERVE FOOD
   // ==========================================================
 
-  Stream<QuerySnapshot> getCustomerReservations() {
-    if (currentUser == null) {
+  Future<String> reserveFood({required FoodModel food}) async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+
+      if (user == null) {
+        return "Please login first";
+      }
+
+      final customerDoc = await _firestore
+          .collection("users")
+          .doc(user.uid)
+          .get();
+
+      final customerData = customerDoc.data();
+
+      // Create document reference
+      DocumentReference reservationRef = _firestore
+          .collection("reservations")
+          .doc();
+
+      await reservationRef.set({
+        "reservationId": reservationRef.id,
+        "status": "Pending",
+        "createdAt": FieldValue.serverTimestamp(),
+
+        // Customer
+        "customerId": user.uid,
+        "customerName": customerData?["fullName"] ?? "",
+        "customerEmail": customerData?["email"] ?? "",
+
+        // Provider
+        "providerId": food.providerId,
+        "providerName": food.providerName,
+        "providerType": food.providerType,
+
+        // Food
+        "foodId": food.foodId,
+        "foodName": food.foodName,
+        "description": food.description,
+        "category": food.category,
+        "quantity": food.quantity,
+        "originalPrice": food.originalPrice,
+        "discountPrice": food.discountPrice,
+        "donation": food.donation,
+        "pickupDate": food.pickupDate,
+        "pickupTime": food.pickupTime,
+        "expiryTime": food.expiryTime,
+        "location": food.location,
+        "imageUrl": food.imageUrl,
+      });
+
+      return "success";
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  // ==========================================================
+  // GET CUSTOMER RESERVATIONS
+  // ==========================================================
+
+  Stream<List<ReservationModel>> getCustomerReservations() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
       return const Stream.empty();
     }
 
     return _firestore
         .collection("reservations")
-        .where("customerId", isEqualTo: currentUser!.uid)
+        .where("customerId", isEqualTo: user.uid)
         .orderBy("reservedAt", descending: true)
-        .snapshots();
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ReservationModel.fromMap(doc.data()))
+              .toList(),
+        );
+  }
+
+  // ==========================================================
+  // CANCEL RESERVATION
+  // ==========================================================
+
+  Future<String> cancelReservation(String reservationId) async {
+    try {
+      // Reservation document nikalo
+      DocumentSnapshot reservationDoc = await _firestore
+          .collection("reservations")
+          .doc(reservationId)
+          .get();
+
+      if (!reservationDoc.exists) {
+        return "Reservation not found";
+      }
+
+      final data = reservationDoc.data() as Map<String, dynamic>;
+
+      // Food document ka reference
+      String foodId = data["foodId"];
+
+      // Quantity jitni reserve hui thi
+      int reservedQuantity = data["quantity"];
+
+      // Food document
+      DocumentReference foodRef = _firestore
+          .collection("food_listings")
+          .doc(foodId);
+
+      await _firestore.runTransaction((transaction) async {
+        DocumentSnapshot foodSnapshot = await transaction.get(foodRef);
+
+        if (foodSnapshot.exists) {
+          final foodData = foodSnapshot.data() as Map<String, dynamic>;
+
+          int currentQuantity = foodData["quantity"] ?? 0;
+
+          // Quantity wapas add kar do
+          transaction.update(foodRef, {
+            "quantity": currentQuantity + reservedQuantity,
+          });
+        }
+
+        // Reservation delete
+        transaction.delete(
+          _firestore.collection("reservations").doc(reservationId),
+        );
+      });
+
+      return "Reservation Cancelled Successfully";
+    } catch (e) {
+      return e.toString();
+    }
   }
 
   // ==========================================================
