@@ -5,7 +5,6 @@ import 'package:frad/screens/food_detail_screen.dart';
 import '../models/food_model.dart';
 import '../models/user_model.dart';
 import '../services/firestore_service.dart';
-import '../widgets/notification_bell.dart';
 import 'loginscreen.dart';
 import 'view_food_details.dart'; // ✅ Updated to match your file name
 
@@ -145,7 +144,54 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
-          NotificationBell(role: 'receiver'),
+          // ✅ STEP 4 FIXED: Added StreamBuilder for Notification Badge Count
+          StreamBuilder<int>(
+            stream: firestoreService.getUnreadNotificationCount(),
+            builder: (context, snapshot) {
+              final count = snapshot.data ?? 0;
+
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    icon: const Icon(
+                      Icons.notifications_none_rounded,
+                      color: Colors.white,
+                    ),
+                    onPressed: () {
+                      Navigator.pushNamed(context, "/notifications");
+                    },
+                  ),
+                  if (count > 0)
+                    Positioned(
+                      right: 8,
+                      top: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.red,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minHeight: 18,
+                          minWidth: 18,
+                        ),
+                        child: Center(
+                          child: Text(
+                            count > 9 ? "9+" : count.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
           PopupMenuButton<String>(
             icon: const CircleAvatar(
               radius: 18,
@@ -590,7 +636,6 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
     );
   }
 
-  // ✅ FIXED: foodCard widget fixed with correct parameter reference
   Widget foodCard({required FoodModel food}) {
     return GestureDetector(
       onTap: () {
@@ -695,7 +740,6 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                     backgroundColor: primaryColor,
                   ),
                   onPressed: () async {
-                    // ✅ FIXED: Changed widget.food to food
                     String result = await firestoreService.reserveFood(
                       food: food,
                     );
@@ -735,26 +779,19 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
     bool isSelected = currentIndex == index;
     return InkWell(
       onTap: () {
-        // 1. Pehle state update karein taake icon ka color change ho sake
         setState(() {
           currentIndex = index;
         });
 
-        // 2. Phir check karein ke kaunsa icon click hua hai
         switch (index) {
           case 0:
-            // Home screen par rehte hue kahin nahi jana
             break;
-
           case 1:
             Navigator.pushNamed(context, "/savedFood");
             break;
-
           case 2:
-            // ✅ Orders icon ke tap par ye navigate karega
             Navigator.pushNamed(context, "/orders");
             break;
-
           case 3:
             Navigator.pushNamed(context, "/profile");
             break;

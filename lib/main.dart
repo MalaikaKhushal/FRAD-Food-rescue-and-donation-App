@@ -16,6 +16,7 @@ import 'screens/my_listings_screen.dart';
 import 'screens/food_detail_screen.dart';
 import 'screens/orders_screen.dart';
 import 'screens/reservations_screen.dart';
+import 'screens/notification_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -58,6 +59,7 @@ class FRADApp extends StatelessWidget {
         '/myListings': (context) => const MyListingsScreen(),
 
         '/addFood': (context) => const AddFoodScreen(),
+        "/notifications": (context) => const NotificationScreen(),
 
         // -----------------------------
         // Food Details

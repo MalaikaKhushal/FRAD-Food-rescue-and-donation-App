@@ -7,6 +7,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
 import '../models/reservation_model.dart';
 
+import '../models/notification_model.dart';
+
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -201,6 +203,95 @@ class FirestoreService {
       return "Error deleting food: ${e.toString()}";
     }
   }
+
+  // ==========================================================
+  // SEND NOTIFICATION
+  // ==========================================================
+
+  Future<String> sendNotification({
+    required String receiverId,
+    required String senderId,
+    required String reservationId,
+    required String title,
+    required String message,
+    required String type,
+  }) async {
+    try {
+      final notificationRef = _firestore.collection("notifications").doc();
+
+      await notificationRef.set({
+        "notificationId": notificationRef.id,
+        "receiverId": receiverId,
+        "senderId": senderId,
+        "reservationId": reservationId,
+        "title": title,
+        "message": message,
+        "type": type,
+        "isRead": false,
+        "createdAt": FieldValue.serverTimestamp(),
+      });
+
+      return "success";
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  // ==========================================================
+  // CUSTOMER NOTIFICATIONS
+  // ==========================================================
+
+  Stream<List<NotificationModel>> getCustomerNotifications() {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      return Stream.value([]);
+    }
+
+    return _firestore
+        .collection("notifications")
+        .where("targetUserId", isEqualTo: user.uid)
+        .orderBy("createdAt", descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => NotificationModel.fromMap(doc.data()))
+              .toList();
+        });
+  }
+
+  // ==========================================================
+  // UNREAD COUNT
+  // ==========================================================
+
+  Stream<int> getUnreadNotificationCount() {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      return Stream.value(0);
+    }
+
+    return _firestore
+        .collection("notifications")
+        .where("targetUserId", isEqualTo: user.uid)
+        .snapshots()
+        .map((snapshot) {
+          int unread = 0;
+
+          for (var doc in snapshot.docs) {
+            final data = doc.data();
+
+            final List<dynamic> readBy = data["readBy"] ?? [];
+
+            if (!readBy.contains(user.uid)) {
+              unread++;
+            }
+          }
+
+          return unread;
+        });
+  }
+
   // ==========================================================
   // GET CUSTOMER ORDERS
   // ==========================================================
@@ -556,5 +647,28 @@ class FirestoreService {
       'createdAt': FieldValue.serverTimestamp(),
       'readBy': <String>[],
     });
+  }
+
+  // ==========================================================
+  // MARK ALL NOTIFICATIONS AS READ
+  // ==========================================================
+  Future<void> markAllNotificationsAsRead() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final snapshot = await _firestore
+        .collection("notifications")
+        .where("targetUserId", isEqualTo: user.uid)
+        .get();
+
+    for (var doc in snapshot.docs) {
+      List<dynamic> readBy = doc["readBy"] ?? [];
+
+      if (!readBy.contains(user.uid)) {
+        readBy.add(user.uid);
+
+        await doc.reference.update({"readBy": readBy});
+      }
+    }
   }
 }
