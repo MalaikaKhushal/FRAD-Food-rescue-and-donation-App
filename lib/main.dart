@@ -14,12 +14,14 @@ import 'screens/providerdashboard.dart';
 import 'screens/add_food_screen.dart';
 import 'screens/my_listings_screen.dart';
 import 'screens/food_detail_screen.dart';
-
 import 'screens/orders_screen.dart';
+import 'screens/reservations_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
   runApp(const FRADApp());
 }
 
@@ -30,38 +32,58 @@ class FRADApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'FRAD',
+      title: "FRAD",
+
       initialRoute: '/',
+
       routes: {
         '/': (context) => const SplashScreen(),
+
         '/landing': (context) => const LandingPage(),
+
         '/signin': (context) => const LoginScreen(),
+
         '/createaccount': (context) => const SignupScreen(),
+
         '/customer': (context) => const CustomerDashboard(),
 
-        "/orders": (context) => const OrdersScreen(),
+        '/provider': (context) => const ProviderDashboard(name: "", role: ""),
 
-        "/myListings": (context) => const MyListingsScreen(),
+        '/orders': (context) => const OrdersScreen(),
+
+        '/Reservations': (context) => const ReservationsScreen(),
+
+        '/providerReservations': (context) => const ReservationsScreen(),
+
+        '/myListings': (context) => const MyListingsScreen(),
+
         '/addFood': (context) => const AddFoodScreen(),
 
-        // ✅ FIXED: Food Detail Screen Route with Arguments
+        // -----------------------------
+        // Food Details
+        // -----------------------------
         '/foodDetails': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
+
           if (args is FoodModel) {
             return FoodDetailScreen(food: args);
           }
-          // Agar data na mile to fallback (safety check)
-          return Scaffold(
-            body: const Center(child: Text("Food data not found!")),
+
+          return const Scaffold(
+            body: Center(child: Text("Food data not found!")),
           );
         },
 
-        // ✅ FIXED: Edit Food Route
-        "/editFood": (context) {
+        // -----------------------------
+        // Edit Food
+        // -----------------------------
+        '/editFood': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
+
           if (args is FoodModel) {
             return AddFoodScreen(food: args);
           }
+
           return const AddFoodScreen();
         },
       },

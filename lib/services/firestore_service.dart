@@ -234,8 +234,8 @@ class FirestoreService {
     try {
       await _firestore.collection("reservations").doc(reservationId).update({
         "status": status,
+        "updatedAt": Timestamp.now(),
       });
-
       return "success";
     } catch (e) {
       return e.toString();
@@ -248,7 +248,7 @@ class FirestoreService {
 
   Future<String> reserveFood({required FoodModel food}) async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
+      final user = _auth.currentUser;
 
       if (user == null) {
         return "Please login first";
@@ -270,6 +270,7 @@ class FirestoreService {
         "reservationId": reservationRef.id,
         "status": "Pending",
         "createdAt": FieldValue.serverTimestamp(),
+        "reservedAt": Timestamp.now(),
 
         // Customer
         "customerId": user.uid,
@@ -509,5 +510,53 @@ class FirestoreService {
       print("Storage Error: $e");
       return "";
     }
+  }
+
+  Future<void> acceptReservation(String reservationId) async {
+    await _firestore.collection("reservations").doc(reservationId).update({
+      "status": "Accepted",
+    });
+  }
+
+  Future<void> readyReservation(String reservationId) async {
+    await _firestore.collection("reservations").doc(reservationId).update({
+      "status": "Ready",
+    });
+  }
+
+  // ==========================================================
+  // NOTIFY CUSTOMER — ORDER STATUS UPDATE
+  // ==========================================================
+  Future<void> notifyCustomerOrderStatus({
+    required String customerId,
+    required String foodName,
+    required String status,
+  }) async {
+    String message;
+    switch (status) {
+      case "Accepted":
+        message = 'Your order for "$foodName" has been accepted!';
+        break;
+      case "Ready":
+        message = '"$foodName" is ready for pickup!';
+        break;
+      case "Completed":
+        message = 'Your order for "$foodName" is complete. Enjoy!';
+        break;
+      case "Cancelled":
+        message = 'Your order for "$foodName" was cancelled.';
+        break;
+      default:
+        message = 'Your order for "$foodName" was updated to $status.';
+    }
+
+    await _firestore.collection('notifications').add({
+      'title': 'Order Update',
+      'message': message,
+      'targetRole': 'receiver',
+      'targetUserId': customerId,
+      'createdAt': FieldValue.serverTimestamp(),
+      'readBy': <String>[],
+    });
   }
 }
