@@ -7,6 +7,7 @@ import 'package:frad/screens/providerdashboard.dart';
 import 'package:frad/screens/signupscreen.dart';
 import 'package:frad/screens/my_listings_screen.dart';
 import 'package:frad/screens/reservations_screen.dart';
+import 'package:frad/screens/donations_screen.dart';
 
 import 'firebase_options.dart';
 
@@ -44,6 +45,7 @@ class FRADApp extends StatelessWidget {
         '/createaccount': (context) => const SignupScreen(),
         '/customer': (context) => const CustomerDashboard(),
         "/myListings": (context) => const MyListingsScreen(),
+        "/donations": (context) => const DonationsScreen(),
 
         //         '/foodDetails': (context) => const FoodDetailsScreen(),
         '/Reservations': (context) => const ReservationsScreen(),

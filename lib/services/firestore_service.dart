@@ -424,4 +424,33 @@ class FirestoreService {
       'readBy': <String>[],
     });
   }
+
+  Future<void> claimDonation({
+    required String foodId,
+    required String providerId,
+  }) async {
+    String id = FirebaseFirestore.instance
+        .collection("donation_claims")
+        .doc()
+        .id;
+
+    await FirebaseFirestore.instance.collection("donation_claims").doc(id).set({
+      "claimId": id,
+
+      "foodId": foodId,
+
+      "providerId": providerId,
+
+      "receiverId": currentUser!.uid,
+
+      "status": "Pending",
+
+      "createdAt": Timestamp.now(),
+    });
+
+    await FirebaseFirestore.instance
+        .collection("food_listings")
+        .doc(foodId)
+        .update({"status": "Claimed"});
+  }
 }

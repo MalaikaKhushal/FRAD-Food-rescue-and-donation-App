@@ -95,4 +95,6 @@ class FoodModel {
       createdAt: map["createdAt"] ?? Timestamp.now(),
     );
   }
+
+  Object? get id => foodId;
 }
