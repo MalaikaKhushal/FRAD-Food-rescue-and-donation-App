@@ -6,6 +6,7 @@ import 'screens/add_food_screen.dart';
 import 'package:frad/screens/providerdashboard.dart';
 import 'package:frad/screens/signupscreen.dart';
 import 'package:frad/screens/my_listings_screen.dart';
+import 'package:frad/screens/reservations_screen.dart';
 
 import 'firebase_options.dart';
 
@@ -45,8 +46,8 @@ class FRADApp extends StatelessWidget {
         "/myListings": (context) => const MyListingsScreen(),
 
         //         '/foodDetails': (context) => const FoodDetailsScreen(),
-
-        // '/reservation': (context) => const ReservationScreen(),
+        '/Reservations': (context) => const ReservationsScreen(),
+        '/providerReservations': (context) => const ReservationsScreen(),
         '/addFood': (context) => const AddFoodScreen(),
         "/editFood": (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
