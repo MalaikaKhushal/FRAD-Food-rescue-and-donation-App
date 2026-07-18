@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:permission_handler/permission_handler.dart'; // ✅ ADD THIS
-import 'dart:convert';
-import 'dart:io';
-import 'package:image/image.dart' as img;
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../models/food_model.dart';
 import '../services/firestore_service.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AddFoodScreen extends StatefulWidget {
   final FoodModel? food;
@@ -19,9 +14,6 @@ class AddFoodScreen extends StatefulWidget {
 }
 
 class _AddFoodScreenState extends State<AddFoodScreen> {
-  // =============================
-  // CONTROLLERS
-  // =============================
   final TextEditingController foodNameController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
   final TextEditingController quantityController = TextEditingController();
@@ -35,7 +27,6 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
 
   final FirestoreService firestoreService = FirestoreService();
   final FirebaseAuth auth = FirebaseAuth.instance;
-  final ImagePicker _imagePicker = ImagePicker();
   final _formKey = GlobalKey<FormState>();
 
   final Color primaryColor = const Color(0xffF57C00);
@@ -43,8 +34,6 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   bool isLoading = false;
   bool donation = false;
   String selectedCategory = "Fast Food";
-
-  File? _selectedImageFile;
 
   final List<String> categories = [
     "Fast Food",
@@ -62,7 +51,6 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   @override
   void initState() {
     super.initState();
-
     if (widget.food != null) {
       foodNameController.text = widget.food!.foodName;
       descriptionController.text = widget.food!.description;
@@ -94,159 +82,8 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     super.dispose();
   }
 
-  // ✅ Permission request function
-  Future<bool> requestGalleryPermission() async {
-    if (Platform.isAndroid) {
-      if (await Permission.photos.request().isGranted ||
-          await Permission.storage.request().isGranted) {
-        return true;
-      } else if (await Permission.photos.isDenied ||
-          await Permission.storage.isDenied) {
-        return false;
-      } else if (await Permission.photos.isDenied) {
-        return false;
-      }
-    } else if (Platform.isIOS) {
-      if (await Permission.photos.request().isGranted) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  Future<bool> requestCameraPermission() async {
-    if (await Permission.camera.request().isGranted) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  // ✅ Gallery se image select karo
-  Future<void> pickImageFromGallery() async {
-    try {
-      // ✅ Request permission first
-      bool hasPermission = await requestGalleryPermission();
-
-      if (!hasPermission) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Gallery permission denied"),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      final XFile? pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.gallery,
-        imageQuality: 50,
-      );
-
-      if (pickedFile != null) {
-        File imageFile = File(pickedFile.path);
-        final compressedImage = await compressImage(imageFile);
-        final bytes = await compressedImage.readAsBytes();
-        final base64String = base64Encode(bytes);
-        final dataUrl = "data:image/jpeg;base64,$base64String";
-
-        setState(() {
-          _selectedImageFile = compressedImage;
-          imageUrlController.text = dataUrl;
-        });
-
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Image selected successfully!"),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error: ${e.toString()}"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  // ✅ Camera se photo lao
-  Future<void> pickImageFromCamera() async {
-    try {
-      // ✅ Request permission first
-      bool hasPermission = await requestCameraPermission();
-
-      if (!hasPermission) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Camera permission denied"),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      final XFile? pickedFile = await _imagePicker.pickImage(
-        source: ImageSource.camera,
-        imageQuality: 50,
-      );
-
-      if (pickedFile != null) {
-        File imageFile = File(pickedFile.path);
-        final compressedImage = await compressImage(imageFile);
-        final bytes = await compressedImage.readAsBytes();
-        final base64String = base64Encode(bytes);
-        final dataUrl = "data:image/jpeg;base64,$base64String";
-
-        setState(() {
-          _selectedImageFile = compressedImage;
-          imageUrlController.text = dataUrl;
-        });
-
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Photo captured successfully!"),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text("Error: ${e.toString()}"),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  // ✅ Image compression
-  Future<File> compressImage(File file) async {
-    try {
-      final image = img.decodeImage(await file.readAsBytes());
-      if (image == null) return file;
-
-      final compressedImage = img.encodeJpg(image, quality: 60);
-      final compressedFile = File(file.path)..writeAsBytesSync(compressedImage);
-
-      return compressedFile;
-    } catch (e) {
-      return file; // Return original if compression fails
-    }
-  }
-
-  // ✅ URL paste dialog
   void showPasteUrlDialog() {
-    final urlController = TextEditingController();
-
+    final urlController = TextEditingController(text: imageUrlController.text);
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -254,15 +91,20 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
         content: TextField(
           controller: urlController,
           decoration: InputDecoration(
-            hintText: "https://images.unsplash.com/...",
+            hintText: "https://example.com/image.jpg",
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            prefixIcon: const Icon(Icons.link),
+            prefixIcon: Icon(Icons.link, color: primaryColor),
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: primaryColor, width: 2),
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
           maxLines: 2,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey),
             child: const Text("Cancel"),
           ),
           ElevatedButton(
@@ -270,41 +112,31 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
             onPressed: () {
               if (urlController.text.isNotEmpty) {
                 setState(() {
-                  imageUrlController.text = urlController.text;
-                  _selectedImageFile = null;
+                  imageUrlController.text = urlController.text.trim();
                 });
                 Navigator.pop(context);
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Image URL added!"),
-                    backgroundColor: Colors.green,
-                  ),
-                );
+                showSnackBar("Image URL added!", Colors.green);
               }
             },
-            child: const Text("Add"),
+            child: const Text("Add", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
   }
 
-  // =============================
-  // SAVE FOOD TO FIRESTORE
-  // =============================
+  void showSnackBar(String msg, Color color) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
+  }
+
   Future<void> saveFood() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
+    if (!_formKey.currentState!.validate()) return;
 
     if (imageUrlController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please add an image"),
-          backgroundColor: Colors.red,
-        ),
-      );
+      showSnackBar("Please add an image URL", Colors.red);
       return;
     }
 
@@ -314,91 +146,57 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
 
     try {
       final currentUser = await firestoreService.getCurrentUserData();
+      String foodId = isEditing
+          ? widget.food!.foodId
+          : FirebaseFirestore.instance.collection("food_listings").doc().id;
 
+      String finalImageUrl = imageUrlController.text.trim();
+
+      Map<String, dynamic> foodData = {
+        "foodId": foodId,
+        "providerId": currentUser.uid,
+        "providerName": currentUser.fullName,
+        "providerType": currentUser.role,
+        "foodName": foodNameController.text.trim(),
+        "description": descriptionController.text.trim(),
+        "category": selectedCategory,
+        "quantity": int.parse(quantityController.text.trim()),
+        "originalPrice": double.parse(originalPriceController.text.trim()),
+        "discountPrice": double.parse(discountPriceController.text.trim()),
+        "donation": donation,
+        "pickupDate": pickupDateController.text.trim(),
+        "pickupTime": pickupTimeController.text.trim(),
+        "expiryTime": expiryTimeController.text.trim(),
+        "location": locationController.text.trim(),
+        "imageUrl": finalImageUrl,
+        "status": "Available",
+        "createdAt": Timestamp.now(),
+      };
+
+      String result;
       if (isEditing) {
-        // ✅ EDIT MODE
-        Map<String, dynamic> updatedData = {
-          "foodName": foodNameController.text.trim(),
-          "description": descriptionController.text.trim(),
-          "category": selectedCategory,
-          "quantity": int.parse(quantityController.text.trim()),
-          "originalPrice": double.parse(originalPriceController.text.trim()),
-          "discountPrice": double.parse(discountPriceController.text.trim()),
-          "donation": donation,
-          "pickupDate": pickupDateController.text.trim(),
-          "pickupTime": pickupTimeController.text.trim(),
-          "expiryTime": expiryTimeController.text.trim(),
-          "location": locationController.text.trim(),
-          "imageUrl": imageUrlController.text.trim(),
-        };
-
-        String result = await firestoreService.updateFood(
+        result = await firestoreService.updateFood(
           widget.food!.foodId,
-          updatedData,
+          foodData,
         );
-
-        if (!mounted) return;
-
-        if (result == "success") {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              backgroundColor: Colors.green,
-              content: Text("Food Updated Successfully"),
-            ),
-          );
-          Navigator.pop(context, true);
-        } else {
-          throw Exception(result);
-        }
       } else {
-        // ✅ ADD MODE
-        String foodId = FirebaseFirestore.instance
-            .collection("food_listings")
-            .doc()
-            .id;
+        FoodModel foodObj = FoodModel.fromMap(foodData);
+        result = await firestoreService.addFood(foodObj);
+      }
 
-        FoodModel food = FoodModel(
-          foodId: foodId,
-          providerId: currentUser.uid,
-          providerName: currentUser.fullName,
-          providerType: currentUser.role,
-          foodName: foodNameController.text.trim(),
-          description: descriptionController.text.trim(),
-          category: selectedCategory,
-          quantity: int.parse(quantityController.text.trim()),
-          originalPrice: double.parse(originalPriceController.text.trim()),
-          discountPrice: double.parse(discountPriceController.text.trim()),
-          donation: donation,
-          pickupDate: pickupDateController.text.trim(),
-          pickupTime: pickupTimeController.text.trim(),
-          expiryTime: expiryTimeController.text.trim(),
-          location: locationController.text.trim(),
-          imageUrl: imageUrlController.text.trim(),
-          status: "Available",
-          createdAt: Timestamp.now(),
+      if (!mounted) return;
+
+      if (result == "success") {
+        showSnackBar(
+          isEditing ? "Food Updated Successfully" : "Food Added Successfully",
+          Colors.green,
         );
-
-        String result = await firestoreService.addFood(food);
-
-        if (!mounted) return;
-
-        if (result == "success") {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              backgroundColor: Colors.green,
-              content: Text("Food Added Successfully"),
-            ),
-          );
-          Navigator.pop(context);
-        } else {
-          throw Exception(result);
-        }
+        Navigator.pop(context, true);
+      } else {
+        throw Exception(result);
       }
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(backgroundColor: Colors.red, content: Text(e.toString())),
-      );
+      showSnackBar(e.toString(), Colors.red);
     }
 
     setState(() {
@@ -414,6 +212,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
         backgroundColor: primaryColor,
         elevation: 0,
         centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
         title: Text(
           isEditing ? "Edit Food" : "Add Food",
           style: const TextStyle(
@@ -445,11 +244,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                   ),
                   child: Column(
                     children: [
-                      const Icon(
-                        Icons.fastfood,
-                        size: 70,
-                        color: Color(0xffF57C00),
-                      ),
+                      Icon(Icons.fastfood, size: 70, color: primaryColor),
                       const SizedBox(height: 10),
                       Text(
                         isEditing
@@ -467,15 +262,12 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       ),
                       const SizedBox(height: 25),
 
-                      // ===== Food Name =====
+                      // Food Name
                       TextFormField(
                         controller: foodNameController,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Enter Food Name";
-                          }
-                          return null;
-                        },
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? "Enter Food Name"
+                            : null,
                         decoration: InputDecoration(
                           labelText: "Food Name",
                           prefixIcon: const Icon(Icons.restaurant),
@@ -486,16 +278,13 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ===== Description =====
+                      // Description
                       TextFormField(
                         controller: descriptionController,
                         maxLines: 3,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Enter Description";
-                          }
-                          return null;
-                        },
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? "Enter Description"
+                            : null,
                         decoration: InputDecoration(
                           labelText: "Description",
                           prefixIcon: const Icon(Icons.description),
@@ -506,7 +295,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ===== Category =====
+                      // Category
                       DropdownButtonFormField(
                         value: selectedCategory,
                         decoration: InputDecoration(
@@ -515,27 +304,23 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                             borderRadius: BorderRadius.circular(15),
                           ),
                         ),
-                        items: categories.map((e) {
-                          return DropdownMenuItem(value: e, child: Text(e));
-                        }).toList(),
-                        onChanged: (value) {
-                          setState(() {
-                            selectedCategory = value!;
-                          });
-                        },
+                        items: categories
+                            .map(
+                              (e) => DropdownMenuItem(value: e, child: Text(e)),
+                            )
+                            .toList(),
+                        onChanged: (value) =>
+                            setState(() => selectedCategory = value!),
                       ),
                       const SizedBox(height: 20),
 
-                      // ===== Quantity =====
+                      // Quantity
                       TextFormField(
                         controller: quantityController,
                         keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Enter Quantity";
-                          }
-                          return null;
-                        },
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? "Enter Quantity"
+                            : null,
                         decoration: InputDecoration(
                           labelText: "Available Quantity",
                           prefixIcon: const Icon(Icons.numbers),
@@ -546,16 +331,13 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ===== Original Price =====
+                      // Original Price
                       TextFormField(
                         controller: originalPriceController,
                         keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Enter Original Price";
-                          }
-                          return null;
-                        },
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? "Enter Original Price"
+                            : null,
                         decoration: InputDecoration(
                           labelText: "Original Price",
                           prefixIcon: const Icon(Icons.currency_rupee),
@@ -566,16 +348,14 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ===== Discount Price =====
+                      // Discount Price
                       TextFormField(
                         controller: discountPriceController,
                         keyboardType: TextInputType.number,
-                        validator: (value) {
-                          if (!donation && (value == null || value.isEmpty)) {
-                            return "Enter Discount Price";
-                          }
-                          return null;
-                        },
+                        validator: (value) =>
+                            (!donation && (value == null || value.isEmpty))
+                            ? "Enter Discount Price"
+                            : null,
                         decoration: InputDecoration(
                           labelText: "Discount Price",
                           prefixIcon: const Icon(Icons.local_offer),
@@ -586,7 +366,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ===== Donation Switch =====
+                      // Donation Switch
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 15,
@@ -598,10 +378,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                         ),
                         child: Row(
                           children: [
-                            const Icon(
-                              Icons.volunteer_activism,
-                              color: Color(0xffF57C00),
-                            ),
+                            Icon(Icons.volunteer_activism, color: primaryColor),
                             const SizedBox(width: 12),
                             const Expanded(
                               child: Text(
@@ -615,9 +392,8 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                               onChanged: (value) {
                                 setState(() {
                                   donation = value;
-                                  if (donation) {
+                                  if (donation)
                                     discountPriceController.text = "0";
-                                  }
                                 });
                               },
                             ),
@@ -628,7 +404,6 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       const Divider(),
                       const SizedBox(height: 20),
 
-                      // ===== Pickup Information Header =====
                       const Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
@@ -641,16 +416,13 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ===== Pickup Date =====
+                      // Pickup Date
                       TextFormField(
                         controller: pickupDateController,
                         readOnly: true,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Select Pickup Date";
-                          }
-                          return null;
-                        },
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? "Select Pickup Date"
+                            : null,
                         decoration: InputDecoration(
                           labelText: "Pickup Date",
                           prefixIcon: const Icon(Icons.calendar_today),
@@ -665,7 +437,6 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                             firstDate: DateTime.now(),
                             lastDate: DateTime(2030),
                           );
-
                           if (pickedDate != null) {
                             setState(() {
                               pickupDateController.text =
@@ -676,16 +447,13 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ===== Pickup Time =====
+                      // Pickup Time
                       TextFormField(
                         controller: pickupTimeController,
                         readOnly: true,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Select Pickup Time";
-                          }
-                          return null;
-                        },
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? "Select Pickup Time"
+                            : null,
                         decoration: InputDecoration(
                           labelText: "Pickup Time",
                           prefixIcon: const Icon(Icons.access_time),
@@ -698,7 +466,6 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                             context: context,
                             initialTime: TimeOfDay.now(),
                           );
-
                           if (pickedTime != null) {
                             setState(() {
                               pickupTimeController.text = pickedTime.format(
@@ -710,16 +477,13 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ===== Expiry Time =====
+                      // Expiry Time
                       TextFormField(
                         controller: expiryTimeController,
                         readOnly: true,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Select Expiry Time";
-                          }
-                          return null;
-                        },
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? "Select Expiry Time"
+                            : null,
                         decoration: InputDecoration(
                           labelText: "Expiry Time",
                           prefixIcon: const Icon(Icons.timer_off),
@@ -732,7 +496,6 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                             context: context,
                             initialTime: TimeOfDay.now(),
                           );
-
                           if (pickedTime != null) {
                             setState(() {
                               expiryTimeController.text = pickedTime.format(
@@ -744,15 +507,12 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ===== Location =====
+                      // Location
                       TextFormField(
                         controller: locationController,
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return "Enter Pickup Location";
-                          }
-                          return null;
-                        },
+                        validator: (value) => (value == null || value.isEmpty)
+                            ? "Enter Pickup Location"
+                            : null,
                         decoration: InputDecoration(
                           labelText: "Pickup Location",
                           prefixIcon: const Icon(Icons.location_on),
@@ -763,7 +523,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ===== IMAGE SECTION =====
+                      // IMAGE SECTION
                       const Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
@@ -776,142 +536,78 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                       ),
                       const SizedBox(height: 12),
 
-                      // ✅ THREE OPTIONS BUTTONS
-                      Row(
-                        children: [
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onPressed: pickImageFromGallery,
-                              icon: const Icon(Icons.image),
-                              label: const Text("Gallery"),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                              ),
-                              onPressed: pickImageFromCamera,
-                              icon: const Icon(Icons.camera_alt),
-                              label: const Text("Camera"),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 10),
+                      // ✅ MATCHED WITH BRAND THEME (ORANGE)
                       SizedBox(
                         width: double.infinity,
                         child: ElevatedButton.icon(
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.purple,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            backgroundColor: primaryColor,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
                           onPressed: showPasteUrlDialog,
-                          icon: const Icon(Icons.link),
-                          label: const Text("Paste URL"),
+                          icon: const Icon(Icons.link, color: Colors.white),
+                          label: const Text(
+                            "Paste Image URL",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
                       ),
                       const SizedBox(height: 18),
 
-                      // ✅ IMAGE PREVIEW
+                      // IMAGE PREVIEW AREA
                       if (imageUrlController.text.isNotEmpty)
                         Column(
                           children: [
-                            if (imageUrlController.text.startsWith(
-                              "data:image",
-                            ))
-                              // Base64 image
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(15),
-                                child: Image.memory(
-                                  base64Decode(
-                                    imageUrlController.text.replaceAll(
-                                      "data:image/jpeg;base64,",
-                                      "",
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(15),
+                              child: Image.network(
+                                imageUrlController.text,
+                                height: 180,
+                                width: double.infinity,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    height: 180,
+                                    color: Colors.grey.shade300,
+                                    child: const Center(
+                                      child: Text(
+                                        "Invalid Image URL\n(Make sure it's a direct image link)",
+                                        textAlign: TextAlign.center,
+                                        style: TextStyle(
+                                          color: Colors.red,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  height: 180,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      height: 180,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade300,
-                                        borderRadius: BorderRadius.circular(15),
-                                      ),
-                                      child: const Center(
-                                        child: Icon(
-                                          Icons.image_not_supported,
-                                          size: 60,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
-                              )
-                            else
-                              // URL image
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(15),
-                                child: Image.network(
-                                  imageUrlController.text,
-                                  height: 180,
-                                  width: double.infinity,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      height: 180,
-                                      decoration: BoxDecoration(
-                                        color: Colors.grey.shade300,
-                                        borderRadius: BorderRadius.circular(15),
-                                      ),
-                                      child: const Center(
-                                        child: Icon(
-                                          Icons.image_not_supported,
-                                          size: 60,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                ),
+                                  );
+                                },
                               ),
+                            ),
                             const SizedBox(height: 12),
                             TextButton.icon(
                               onPressed: () {
                                 setState(() {
                                   imageUrlController.clear();
-                                  _selectedImageFile = null;
                                 });
                               },
-                              icon: const Icon(Icons.clear),
-                              label: const Text("Remove Image"),
+                              icon: const Icon(Icons.clear, color: Colors.red),
+                              label: const Text(
+                                "Remove Image",
+                                style: TextStyle(color: Colors.red),
+                              ),
                             ),
                           ],
                         ),
 
                       const SizedBox(height: 30),
 
-                      // ===== SUBMIT BUTTON =====
+                      // SUBMIT BUTTON
                       SizedBox(
                         width: double.infinity,
                         height: 55,
@@ -937,7 +633,6 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                                 ),
                         ),
                       ),
-
                       const SizedBox(height: 30),
                     ],
                   ),

@@ -24,15 +24,12 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
   @override
   void initState() {
     super.initState();
-
     loadUser();
   }
 
   final FirestoreService firestoreService = FirestoreService();
-
   UserModel? currentUser;
   final Color primaryColor = const Color(0xffF57C00);
-
   int currentIndex = 0;
 
   int? hoveredDashboard;
@@ -43,11 +40,8 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
 
   final List<Map<String, dynamic>> actions = [
     {"icon": Icons.add_box_rounded, "title": "Add Food"},
-
     {"icon": Icons.inventory_2_outlined, "title": "My Listings"},
-
     {"icon": Icons.receipt_long, "title": "Reservations"},
-
     {"icon": Icons.volunteer_activism, "title": "Donations"},
   ];
 
@@ -59,13 +53,10 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
 
   Future<void> loadUser() async {
     currentUser = await firestoreService.getCurrentUserData();
-
     if (mounted) {
       setState(() {});
     }
   }
-
-  // Replace your existing `logout()` function with this:
 
   Future<void> logout() async {
     final bool? confirm = await showGeneralDialog<bool>(
@@ -144,9 +135,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
     );
 
     if (confirm != true) return;
-
     await _auth.signOut();
-
     if (!mounted) return;
 
     Navigator.pushAndRemoveUntil(
@@ -160,69 +149,51 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xffF5F6FA),
-
       appBar: AppBar(
         elevation: 0,
-
         backgroundColor: primaryColor,
-
         title: const Text(
           "FRAD",
-
           style: TextStyle(
             color: Colors.white,
             fontWeight: FontWeight.bold,
             letterSpacing: 1,
           ),
         ),
-
         actions: [
           NotificationBell(role: 'provider'),
           PopupMenuButton<String>(
             icon: const CircleAvatar(
               radius: 18,
-
               backgroundColor: Colors.white,
-
               child: Icon(Icons.person, color: Color(0xffF57C00)),
             ),
-
             onSelected: (value) {
               if (value == "logout") {
                 logout();
               }
             },
-
             itemBuilder: (context) => [
               PopupMenuItem(
                 enabled: false,
-
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
-
                   children: [
                     Text(
                       widget.name,
-
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-
                     Text(widget.role),
                   ],
                 ),
               ),
-
               const PopupMenuDivider(),
-
               const PopupMenuItem(
                 value: "logout",
-
                 child: Row(
                   children: [
                     Icon(Icons.logout),
-
                     SizedBox(width: 10),
-
                     Text("Logout"),
                   ],
                 ),
@@ -234,7 +205,6 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 90),
-
           child: Column(
             children: [
               /// ===========================
@@ -243,7 +213,6 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(24),
-
                 decoration: BoxDecoration(
                   color: primaryColor,
                   borderRadius: const BorderRadius.only(
@@ -251,7 +220,6 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                     bottomRight: Radius.circular(30),
                   ),
                 ),
-
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -259,9 +227,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                       "Welcome Back 👋",
                       style: TextStyle(color: Colors.white70, fontSize: 16),
                     ),
-
                     const SizedBox(height: 8),
-
                     Text(
                       currentUser == null
                           ? "Loading..."
@@ -272,20 +238,16 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 5),
-
                     Container(
                       padding: const EdgeInsets.symmetric(
                         horizontal: 12,
                         vertical: 5,
                       ),
-
                       decoration: BoxDecoration(
                         color: Colors.white24,
                         borderRadius: BorderRadius.circular(20),
                       ),
-
                       child: Text(
                         currentUser == null ? "" : currentUser!.role,
                         style: const TextStyle(
@@ -297,7 +259,6 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 25),
 
               /// ===========================
@@ -305,33 +266,24 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
               /// ===========================
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 18),
-
                 child: Align(
                   alignment: Alignment.centerLeft,
-
                   child: Text(
                     "Today's Overview",
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
-
               const SizedBox(height: 18),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18),
-
                 child: GridView.count(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-
                   crossAxisCount: 2,
-
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-
                   childAspectRatio: 1.0,
-
                   children: [
                     firebaseDashboardCard(
                       title: "Food Listings",
@@ -339,21 +291,18 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                       color: Colors.orange,
                       stream: firestoreService.getTotalListings(),
                     ),
-
                     firebaseDashboardCard(
                       title: "Orders",
                       icon: Icons.shopping_bag,
                       color: Colors.green,
                       stream: firestoreService.getTotalReservations(),
                     ),
-
                     firebaseDashboardCard(
                       title: "Donations",
                       icon: Icons.favorite,
                       color: Colors.red,
                       stream: firestoreService.getTotalDonations(),
                     ),
-
                     firebaseDashboardCard(
                       title: "Rating",
                       icon: Icons.star,
@@ -363,7 +312,6 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                   ],
                 ),
               ),
-
               const SizedBox(height: 30),
 
               /// ===========================
@@ -371,49 +319,36 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
               /// ===========================
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 18),
-
                 child: Align(
                   alignment: Alignment.centerLeft,
-
                   child: Text(
                     "Quick Actions",
                     style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                   ),
                 ),
               ),
-
               const SizedBox(height: 18),
-
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 18),
-
                 child: GridView.builder(
                   shrinkWrap: true,
-
                   physics: const NeverScrollableScrollPhysics(),
-
                   itemCount: actions.length,
-
                   gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 2,
-
                     crossAxisSpacing: 16,
-
                     mainAxisSpacing: 16,
-
                     childAspectRatio: 1.45,
                   ),
-
                   itemBuilder: (context, index) {
                     return actionCard(index, actions[index]);
                   },
                 ),
               ),
-
               const SizedBox(height: 30),
 
               /// ===========================
-              /// RECENT FOOD LISTINGS
+              /// RECENT FOOD LISTINGS (FIXED LISVIEW RENDERING)
               /// ===========================
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 18),
@@ -425,7 +360,6 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                   ),
                 ),
               ),
-
               const SizedBox(height: 18),
 
               StreamBuilder<List<FoodModel>>(
@@ -436,7 +370,14 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                   }
 
                   if (snapshot.hasError) {
-                    return const Center(child: Text("Something went wrong"));
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Text(
+                          "Error loading listings: ${snapshot.error}",
+                        ),
+                      ),
+                    );
                   }
 
                   if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -445,7 +386,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                       child: Center(
                         child: Text(
                           "No Food Listings Yet",
-                          style: TextStyle(fontSize: 18),
+                          style: TextStyle(fontSize: 18, color: Colors.grey),
                         ),
                       ),
                     );
@@ -453,26 +394,25 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
 
                   List<FoodModel> foods = snapshot.data!;
 
-                  return ListView.builder(
+                  // ✅ FIXED: Separated from outer scroll logic using explicit builders
+                  return ListView.separated(
                     shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
+                    physics:
+                        const ClampingScrollPhysics(), // Allows clean integration inside SingleChildScrollView
                     itemCount: foods.length,
+                    separatorBuilder: (context, index) =>
+                        const SizedBox(height: 4),
                     itemBuilder: (context, index) {
                       return foodCard(foods[index]);
                     },
                   );
                 },
               ),
-
               const SizedBox(height: 20),
             ],
           ),
         ),
       ),
-
-      /// ===========================
-      /// FLOATING ACTION BUTTON
-      /// ===========================
       floatingActionButton: FloatingActionButton.extended(
         backgroundColor: primaryColor,
         elevation: 6,
@@ -485,42 +425,16 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
-
-      /// ===========================
-      /// BOTTOM NAVIGATION
-      /// ===========================
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: currentIndex,
         selectedItemColor: primaryColor,
         unselectedItemColor: Colors.grey,
         type: BottomNavigationBarType.fixed,
-
         onTap: (index) {
           setState(() {
             currentIndex = index;
           });
-
-          switch (index) {
-            case 0:
-              // Dashboard
-              break;
-
-            case 1:
-              // Foods
-              break;
-
-            case 2:
-              // Orders
-              break;
-
-            case 3:
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text("Profile screen coming soon")),
-              );
-              break;
-          }
         },
-
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.dashboard),
@@ -547,11 +461,9 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
       stream: stream,
       builder: (context, snapshot) {
         String value = "0";
-
         if (snapshot.hasData) {
           value = snapshot.data.toString();
         }
-
         return Container(
           decoration: BoxDecoration(
             color: Colors.white,
@@ -564,22 +476,17 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
               ),
             ],
           ),
-
           child: Padding(
             padding: const EdgeInsets.all(10),
-
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
-
               children: [
                 CircleAvatar(
                   radius: 22,
                   backgroundColor: color.withOpacity(.12),
                   child: Icon(icon, color: color),
                 ),
-
                 const SizedBox(height: 8),
-
                 Text(
                   value,
                   style: const TextStyle(
@@ -587,9 +494,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-
                 const SizedBox(height: 4),
-
                 Text(
                   title,
                   textAlign: TextAlign.center,
@@ -603,62 +508,8 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
     );
   }
 
-  Widget dashboardCard(int index, Map<String, dynamic> item) {
-    final hovered = hoveredDashboard == index;
-
-    return MouseRegion(
-      onEnter: (_) => setState(() => hoveredDashboard = index),
-      onExit: (_) => setState(() => hoveredDashboard = null),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        transform: hovered
-            ? (Matrix4.identity()..translate(0, -5))
-            : Matrix4.identity(),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black12,
-              blurRadius: hovered ? 12 : 6,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              CircleAvatar(
-                radius: 24,
-                backgroundColor: item["color"].withOpacity(.12),
-                child: Icon(item["icon"], color: item["color"], size: 26),
-              ),
-              Text(
-                item["value"],
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              Text(
-                item["title"],
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 14, color: Colors.grey),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget actionCard(int index, Map<String, dynamic> item) {
     final hovered = hoveredAction == index;
-
     return MouseRegion(
       onEnter: (_) => setState(() => hoveredAction = index),
       onExit: (_) => setState(() => hoveredAction = null),
@@ -684,22 +535,15 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
             switch (item["title"]) {
               case "Add Food":
                 Navigator.pushNamed(context, "/addFood");
-
                 break;
-
               case "My Listings":
                 Navigator.pushNamed(context, "/myListings");
-
                 break;
-
               case "Reservations":
                 Navigator.pushNamed(context, "/providerReservations");
-
                 break;
-
               case "Donations":
                 Navigator.pushNamed(context, "/donations");
-
                 break;
             }
           },
@@ -816,7 +660,6 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                   InkWell(
                     borderRadius: BorderRadius.circular(20),
                     onTap: () {
-                      // ✅ Edit screen ko food data pass karo
                       Navigator.pushNamed(
                         context,
                         "/editFood",
@@ -850,37 +693,25 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
   Future<void> showDeleteDialog(FoodModel food) async {
     showDialog(
       context: context,
-
       builder: (context) {
         return AlertDialog(
           title: const Text("Delete Food"),
-
           content: Text("Delete ${food.foodName} ?"),
-
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-
+              onPressed: () => Navigator.pop(context),
               child: const Text("Cancel"),
             ),
-
             ElevatedButton(
               style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-
               onPressed: () async {
                 Navigator.pop(context);
-
                 String result = await firestoreService.deleteFood(food.foodId);
-
                 if (!mounted) return;
-
                 ScaffoldMessenger.of(
                   context,
                 ).showSnackBar(SnackBar(content: Text(result)));
               },
-
               child: const Text(
                 "Delete",
                 style: TextStyle(color: Colors.white),

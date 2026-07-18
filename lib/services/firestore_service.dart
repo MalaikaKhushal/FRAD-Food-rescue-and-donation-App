@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/food_model.dart';
 import '../models/user_model.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -359,6 +361,19 @@ class FirestoreService {
       return null;
     } catch (e) {
       throw Exception("Error getting food: $e");
+    }
+  }
+
+  Future<String> uploadFoodImage(File imageFile, String foodId) async {
+    try {
+      final FirebaseStorage storage = FirebaseStorage.instance;
+      Reference ref = storage.ref().child("food_images").child("$foodId.jpg");
+      UploadTask uploadTask = ref.putFile(imageFile);
+      TaskSnapshot snapshot = await uploadTask;
+      return await snapshot.ref.getDownloadURL();
+    } catch (e) {
+      print("Storage Error: $e");
+      return "";
     }
   }
 }
