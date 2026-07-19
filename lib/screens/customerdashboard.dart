@@ -6,7 +6,6 @@ import '../models/food_model.dart';
 import '../models/user_model.dart';
 import '../services/firestore_service.dart';
 import 'loginscreen.dart';
-import 'view_food_details.dart'; // ✅ Updated to match your file name
 
 class CustomerDashboard extends StatefulWidget {
   const CustomerDashboard({super.key});
@@ -144,7 +143,6 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
         actions: [
-          // ✅ STEP 4 FIXED: Added StreamBuilder for Notification Badge Count
           StreamBuilder<int>(
             stream: firestoreService.getUnreadNotificationCount(),
             builder: (context, snapshot) {
@@ -605,7 +603,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
     return GestureDetector(
       onTap: () {
         setState(() {
-          selectedCategory = title;
+          selectedCategory = selected ? "All" : title;
         });
       },
       child: Container(
@@ -695,6 +693,34 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                     ],
                   ),
                 ),
+                // ✅ FIXED: Separated alignment and cleanly structure components
+                StreamBuilder<bool>(
+                  stream: firestoreService.isFoodSaved(food.foodId),
+                  builder: (context, snapshot) {
+                    final isSaved = snapshot.data ?? false;
+                    return IconButton(
+                      icon: Icon(
+                        isSaved
+                            ? Icons.favorite_rounded
+                            : Icons.favorite_border_rounded,
+                        color: isSaved ? Colors.red : Colors.grey.shade400,
+                      ),
+                      onPressed: () async {
+                        String message = await firestoreService.toggleSavedFood(
+                          foodId: food.foodId,
+                          isCurrentlySaved: isSaved,
+                        );
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(message),
+                            duration: const Duration(seconds: 1),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
                 if (food.donation)
                   Container(
                     padding: const EdgeInsets.symmetric(
@@ -719,21 +745,22 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
             Row(
               children: [
                 Text(
-                  "Rs ${food.discountPrice}",
+                  food.donation ? "Free Food" : "Rs ${food.discountPrice}",
                   style: TextStyle(
-                    color: primaryColor,
+                    color: food.donation ? Colors.green : primaryColor,
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text(
-                  "Rs ${food.originalPrice}",
-                  style: const TextStyle(
-                    decoration: TextDecoration.lineThrough,
-                    color: Colors.grey,
+                if (!food.donation)
+                  Text(
+                    "Rs ${food.originalPrice}",
+                    style: const TextStyle(
+                      decoration: TextDecoration.lineThrough,
+                      color: Colors.grey,
+                    ),
                   ),
-                ),
                 const Spacer(),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(

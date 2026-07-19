@@ -16,10 +16,9 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
   final Color primaryColor = const Color(0xffF57C00);
   bool isLoading = false;
 
-  // Detail Tile Widget
+  // Detail Tile Widget (Fixed: Responsive width to avoid layout issues)
   Widget detailTile(IconData icon, String title, String value) {
     return Container(
-      width: 170,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.orange.shade50,
@@ -27,19 +26,21 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, color: primaryColor),
           const SizedBox(width: 10),
-          Expanded(
+          Flexible(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
                   title,
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(height: 4),
-                Text(value),
+                Text(value, overflow: TextOverflow.ellipsis, maxLines: 1),
               ],
             ),
           ),
@@ -56,21 +57,23 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
         children: [
           Icon(icon, color: primaryColor, size: 22),
           const SizedBox(width: 15),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(color: Colors.grey, fontSize: 13),
-              ),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(color: Colors.grey, fontSize: 13),
                 ),
-              ),
-            ],
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -164,6 +167,37 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
         ),
         centerTitle: true,
         iconTheme: const IconThemeData(color: Colors.white),
+        actions: [
+          StreamBuilder<bool>(
+            stream: firestoreService.isFoodSaved(widget.food.foodId),
+            builder: (context, snapshot) {
+              final isSaved = snapshot.data ?? false;
+              return IconButton(
+                icon: Icon(
+                  isSaved
+                      ? Icons.favorite_rounded
+                      : Icons.favorite_border_rounded,
+                  color: isSaved ? Colors.red : Colors.white,
+                  size: 26,
+                ),
+                onPressed: () async {
+                  String message = await firestoreService.toggleSavedFood(
+                    foodId: widget.food.foodId,
+                    isCurrentlySaved: isSaved,
+                  );
+                  if (!mounted) return;
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(message),
+                      duration: const Duration(seconds: 1),
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+          const SizedBox(width: 10),
+        ],
       ),
       body: SafeArea(
         child: LayoutBuilder(
@@ -194,7 +228,9 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                           ? 1.9
                           : 1.4,
                       child: Image.network(
-                        widget.food.imageUrl,
+                        widget.food.imageUrl.isNotEmpty
+                            ? widget.food.imageUrl
+                            : 'https://via.placeholder.com/300',
                         width: double.infinity,
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
@@ -244,9 +280,15 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                             ],
                           ),
                           const Divider(height: 30),
-                          Wrap(
-                            spacing: 15,
-                            runSpacing: 15,
+
+                          // Grid/Wrap Layout for info
+                          GridView.count(
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            crossAxisCount: desktop ? 3 : 2,
+                            childAspectRatio: 2.5,
+                            mainAxisSpacing: 10,
+                            crossAxisSpacing: 10,
                             children: [
                               detailTile(
                                 Icons.inventory_2,
@@ -268,16 +310,25 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                           const SizedBox(height: 25),
                           Row(
                             children: [
+                              // Fixed Price Tag logic
                               Text(
-                                "Rs ${widget.food.discountPrice.toStringAsFixed(0)}",
+                                widget.food.donation ||
+                                        widget.food.discountPrice == 0
+                                    ? "Free Food"
+                                    : "Rs ${widget.food.discountPrice.toStringAsFixed(0)}",
                                 style: TextStyle(
-                                  color: primaryColor,
+                                  color:
+                                      widget.food.donation ||
+                                          widget.food.discountPrice == 0
+                                      ? Colors.green
+                                      : primaryColor,
                                   fontWeight: FontWeight.bold,
                                   fontSize: desktop ? 30 : 24,
                                 ),
                               ),
                               const SizedBox(width: 12),
-                              if (widget.food.discountPrice == 0)
+                              if (widget.food.donation ||
+                                  widget.food.discountPrice == 0)
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 12,
@@ -330,7 +381,9 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                         ),
                         const SizedBox(height: 10),
                         Text(
-                          widget.food.description,
+                          widget.food.description.isNotEmpty
+                              ? widget.food.description
+                              : "No description provided.",
                           style: const TextStyle(
                             fontSize: 15,
                             color: Colors.black87,

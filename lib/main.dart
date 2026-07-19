@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:frad/screens/saved_food_screen.dart';
 
 import 'firebase_options.dart';
 
@@ -17,6 +18,7 @@ import 'screens/food_detail_screen.dart';
 import 'screens/orders_screen.dart';
 import 'screens/reservations_screen.dart';
 import 'screens/notification_screen.dart';
+import 'screens/saved_food_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -60,7 +62,7 @@ class FRADApp extends StatelessWidget {
 
         '/addFood': (context) => const AddFoodScreen(),
         "/notifications": (context) => const NotificationScreen(),
-
+        '/savedFood': (context) => const SavedFoodScreen(),
         // -----------------------------
         // Food Details
         // -----------------------------
