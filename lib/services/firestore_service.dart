@@ -450,9 +450,8 @@ class FirestoreService {
   }
 
   // ==========================================================
-  // CANCEL RESERVATION
+  // CANCEL RESERVATION (UPDATED WITH STATUS & QUANTITY RESTORE)
   // ==========================================================
-
   Future<String> cancelReservation(String reservationId) async {
     try {
       DocumentSnapshot reservationDoc = await _firestore
@@ -463,8 +462,10 @@ class FirestoreService {
       if (!reservationDoc.exists) return "Reservation not found";
 
       final data = reservationDoc.data() as Map<String, dynamic>;
-      String foodId = data["foodId"];
-      int reservedQuantity = data["quantity"];
+      String foodId = data["foodId"] ?? "";
+      int reservedQuantity = data["quantity"] ?? 1;
+      String customerId = data["customerId"] ?? "";
+      String foodName = data["foodName"] ?? "";
 
       DocumentReference foodRef = _firestore
           .collection("food_listings")
@@ -477,16 +478,29 @@ class FirestoreService {
           final foodData = foodSnapshot.data() as Map<String, dynamic>;
           int currentQuantity = foodData["quantity"] ?? 0;
 
+          // 1. Food list me quantity wapas barha dein
           transaction.update(foodRef, {
             "quantity": currentQuantity + reservedQuantity,
           });
         }
-        transaction.delete(
+
+        // 2. Document delete karne ki bajaye status "Cancelled" karein taake history kharab na ho
+        transaction.update(
           _firestore.collection("reservations").doc(reservationId),
+          {"status": "Cancelled", "updatedAt": Timestamp.now()},
         );
       });
 
-      return "Reservation Cancelled Successfully";
+      // 3. Customer ko notification bhejien ke order cancel ho gya hai
+      if (customerId.isNotEmpty && foodName.isNotEmpty) {
+        await notifyCustomerOrderStatus(
+          customerId: customerId,
+          foodName: foodName,
+          status: "Cancelled",
+        );
+      }
+
+      return "success";
     } catch (e) {
       return e.toString();
     }
