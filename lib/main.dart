@@ -20,7 +20,10 @@ import 'screens/orders_screen.dart';
 import 'screens/reservations_screen.dart';
 import 'screens/notification_screen.dart';
 import 'screens/saved_food_screen.dart';
+import 'screens/donations_screen.dart';
 import 'screens/customer_profile_screen.dart';
+import 'screens/provider_profile_screen.dart';
+import 'package:frad/screens/provider_qr_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,7 +62,7 @@ class FRADApp extends StatelessWidget {
         '/addFood': (context) => const AddFoodScreen(),
         '/Reservations': (context) => const ReservationsScreen(),
         '/providerReservations': (context) => const ReservationsScreen(),
-        '/donations': (context) => const DonationsScreen(),
+
         // --- Dynamic Food Details ---
         '/foodDetails': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
