@@ -13,6 +13,78 @@ class _OrdersScreenState extends State<OrdersScreen> {
   final FirestoreService firestoreService = FirestoreService();
   final Color primaryColor = const Color(0xffF57C00);
 
+  // Track loading index to show loader on the specific card being cancelled
+  String deletingReservationId = "";
+
+  // Functional Cancel Logic Function
+  Future<void> _handleCancelOrder(String reservationId) async {
+    // Show confirmation dialog before deleting
+    bool confirm =
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            title: const Text(
+              "Cancel Order",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            content: const Text(
+              "Are you sure you want to cancel this food reservation?",
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text("No", style: TextStyle(color: Colors.grey)),
+              ),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text(
+                  "Yes, Cancel",
+                  style: TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+        ) ??
+        false;
+
+    if (!confirm) return;
+
+    setState(() {
+      deletingReservationId = reservationId;
+    });
+
+    try {
+      // Calling Firestore to delete/cancel reservation
+      await firestoreService.cancelReservation(reservationId);
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          backgroundColor: Colors.green,
+          content: Text("Order cancelled successfully!"),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red,
+          content: Text("Failed to cancel order: ${e.toString()}"),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          deletingReservationId = "";
+        });
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,11 +104,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          // 🔴 ERROR DEBUGGING BLOCK
           if (snapshot.hasError) {
-            // Isse aapke VS Code / Android Studio ke terminal me exact error dikhega
             debugPrint("🔴 FIRESTORE ERROR: ${snapshot.error}");
-
             return Center(
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
@@ -57,7 +126,6 @@ class _OrdersScreenState extends State<OrdersScreen> {
                       ),
                     ),
                     const SizedBox(height: 5),
-                    // Screen par bhi error message temporarily show hoga
                     Text(
                       snapshot.error.toString(),
                       textAlign: TextAlign.center,
@@ -94,8 +162,9 @@ class _OrdersScreenState extends State<OrdersScreen> {
 
   Widget orderCard(ReservationModel order) {
     Color statusColor = Colors.orange;
+    String currentStatus = order.status.trim().toLowerCase();
 
-    switch (order.status.toLowerCase()) {
+    switch (currentStatus) {
       case "accepted":
         statusColor = Colors.green;
         break;
@@ -108,6 +177,8 @@ class _OrdersScreenState extends State<OrdersScreen> {
       default:
         statusColor = Colors.orange;
     }
+
+    bool isCurrentlyDeleting = deletingReservationId == order.reservationId;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -187,7 +258,7 @@ class _OrdersScreenState extends State<OrdersScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      if (order.status == "Pending")
+                      if (currentStatus == "pending")
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
@@ -195,13 +266,24 @@ class _OrdersScreenState extends State<OrdersScreen> {
                               backgroundColor: Colors.red,
                               foregroundColor: Colors.white,
                             ),
-                            onPressed: () async {
-                              await firestoreService.cancelReservation(
-                                order.reservationId,
-                              );
-                            },
-                            icon: const Icon(Icons.delete),
-                            label: const Text("Cancel Order"),
+                            onPressed: isCurrentlyDeleting
+                                ? null
+                                : () => _handleCancelOrder(order.reservationId),
+                            icon: isCurrentlyDeleting
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      color: Colors.white,
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Icon(Icons.delete),
+                            label: Text(
+                              isCurrentlyDeleting
+                                  ? "Cancelling..."
+                                  : "Cancel Order",
+                            ),
                           ),
                         ),
                     ],
@@ -272,18 +354,26 @@ class _OrdersScreenState extends State<OrdersScreen> {
                             ),
                           ),
                           const SizedBox(height: 10),
-                          if (order.status == "Pending")
+                          if (currentStatus == "pending")
                             ElevatedButton(
-                              onPressed: () async {
-                                await firestoreService.cancelReservation(
-                                  order.reservationId,
-                                );
-                              },
+                              onPressed: isCurrentlyDeleting
+                                  ? null
+                                  : () =>
+                                        _handleCancelOrder(order.reservationId),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.red,
                                 foregroundColor: Colors.white,
                               ),
-                              child: const Text("Cancel"),
+                              child: isCurrentlyDeleting
+                                  ? const SizedBox(
+                                      width: 15,
+                                      height: 15,
+                                      child: CircularProgressIndicator(
+                                        color: Colors.white,
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : const Text("Cancel"),
                             ),
                         ],
                       ),
