@@ -2,17 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-// ─────────────────────────────────────────────────────────────
-//  Animated Notification Bell (with live Firestore badge)
-//  Place this file in: lib/widgets/notification_bell.dart
-//
-//  Usage in any AppBar:
-//    actions: [
-//      NotificationBell(role: 'provider'),   // on provider dashboard
-//      // or
-//      NotificationBell(role: 'receiver'),   // on customer/receiver dashboard
-//    ],
-// ─────────────────────────────────────────────────────────────
 class NotificationBell extends StatefulWidget {
   final String role; // 'provider' or 'receiver'
   const NotificationBell({super.key, required this.role});
@@ -48,6 +37,7 @@ class _NotificationBellState extends State<NotificationBell>
       stream: FirebaseFirestore.instance
           .collection('notifications')
           .where('targetRole', isEqualTo: widget.role)
+          .where('targetUserId', isEqualTo: _uid)
           .orderBy('createdAt', descending: true)
           .limit(30)
           .snapshots(),
@@ -59,7 +49,6 @@ class _NotificationBellState extends State<NotificationBell>
           return !readBy.contains(_uid);
         }).length;
 
-        // trigger a little shake whenever unread count increases
         if (unreadCount > 0) {
           _shakeController.forward(from: 0);
         }
@@ -187,6 +176,7 @@ class _NotificationBellState extends State<NotificationBell>
                               data['readBy'] ?? [],
                             );
                             final isUnread = !readBy.contains(_uid);
+                            final type = data['type'] ?? '';
 
                             return TweenAnimationBuilder<double>(
                               tween: Tween(begin: 0, end: 1),
@@ -202,12 +192,33 @@ class _NotificationBellState extends State<NotificationBell>
                               ),
                               child: ListTile(
                                 onTap: () async {
+                                  // 1. First mark as read in Firestore
                                   await FirebaseFirestore.instance
                                       .collection('notifications')
                                       .doc(docs[index].id)
                                       .update({
                                         'readBy': FieldValue.arrayUnion([_uid]),
                                       });
+
+                                  // 2. Close the bottom sheet
+                                  if (!context.mounted) return;
+                                  Navigator.pop(context);
+
+                                  // 3. If provider notification type is 'new_reservation', route to reservations
+                                  if (widget.role == 'provider' &&
+                                      type == 'new_reservation') {
+                                    Navigator.pushNamed(
+                                      context,
+                                      "/providerReservations",
+                                    );
+                                  }
+                                  // Optional: If customer notification, route to customer orders/reservations screen
+                                  else if (widget.role == 'receiver') {
+                                    Navigator.pushNamed(
+                                      context,
+                                      "/customerOrders",
+                                    );
+                                  }
                                 },
                                 leading: CircleAvatar(
                                   backgroundColor: isUnread
