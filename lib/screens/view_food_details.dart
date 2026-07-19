@@ -1,552 +1,401 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-class ViewFoodDetails extends StatelessWidget {
-  final DocumentSnapshot food;
+import '../models/food_model.dart';
+import '../services/firestore_service.dart';
 
-  const ViewFoodDetails({super.key, required this.food});
+class ViewFoodDetails extends StatefulWidget {
+  final dynamic food;
+
+  const ViewFoodDetails({Key? key, required this.food}) : super(key: key);
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xfff8f9fb),
+  State<ViewFoodDetails> createState() => _ViewFoodDetailsState();
+}
 
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            expandedHeight: 320,
+class _ViewFoodDetailsState extends State<ViewFoodDetails> {
+  final FirestoreService firestoreService = FirestoreService();
 
-            pinned: true,
+  bool isLoading = false;
 
-            elevation: 0,
+  late String foodId;
+  late String providerId;
 
-            backgroundColor: Colors.orange,
+  String foodName = "";
+  String providerName = "";
+  String category = "";
+  String description = "";
+  String location = "";
+  String quantity = "";
+  String imageUrl = "";
+  String heroTag = "";
+  String status = "";
+  bool donation = false;
 
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
+  @override
+  void initState() {
+    super.initState();
+    _loadFood();
+  }
 
-              onPressed: () {
-                Navigator.pop(context);
+  void _loadFood() {
+    if (widget.food is DocumentSnapshot) {
+      final doc = widget.food as DocumentSnapshot;
+
+      final data = doc.data() as Map<String, dynamic>;
+
+      foodId = data["foodId"] ?? doc.id;
+      providerId = data["providerId"] ?? "";
+
+      heroTag = doc.id;
+
+      foodName = data["foodName"] ?? "";
+      providerName = data["providerName"] ?? "";
+      category = data["category"] ?? "";
+      description = data["description"] ?? "";
+      quantity = "${data["quantity"] ?? 0}";
+      location = data["location"] ?? "";
+      imageUrl = data["imageUrl"] ?? "";
+      status = data["status"] ?? "";
+      donation = data["donation"] ?? false;
+    } else if (widget.food is FoodModel) {
+      final FoodModel model = widget.food;
+
+      foodId = model.foodId;
+      providerId = model.providerId;
+
+      heroTag = model.foodId;
+
+      foodName = model.foodName;
+      providerName = model.providerName;
+      category = model.category;
+      description = model.description;
+      quantity = model.quantity.toString();
+      location = model.location;
+      imageUrl = model.imageUrl;
+      status = model.status;
+      donation = model.donation;
+    }
+  }
+
+  Future<void> _claimDonation() async {
+    try {
+      setState(() {
+        isLoading = true;
+      });
+
+      await firestoreService.claimDonation(
+        foodId: foodId,
+        providerId: providerId,
+      );
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Donation request sent successfully."),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      Navigator.pop(context);
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          isLoading = false;
+        });
+      }
+    }
+  }
+
+  Widget _imageSection() {
+    return Hero(
+      tag: heroTag,
+      child: imageUrl.isNotEmpty
+          ? Image.network(
+              imageUrl,
+              width: double.infinity,
+              height: 330,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) {
+                return _placeholderImage();
               },
+            )
+          : _placeholderImage(),
+    );
+  }
+
+  Widget _placeholderImage() {
+    return Container(
+      height: 330,
+      width: double.infinity,
+      color: Colors.grey.shade200,
+      child: const Icon(Icons.fastfood, color: Colors.orange, size: 90),
+    );
+  }
+
+  Widget infoCard(IconData icon, Color color, String title, String value) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(.05),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
             ),
-
-            actions: [
-              IconButton(onPressed: () {}, icon: const Icon(Icons.share)),
-            ],
-
-            flexibleSpace: FlexibleSpaceBar(
-              background: Hero(
-                tag: food.id,
-
-                child: Image.network(
-                  food["imageUrl"],
-
-                  fit: BoxFit.cover,
-
-                  errorBuilder: (_, __, ___) {
-                    return Container(
-                      color: Colors.grey.shade200,
-
-                      child: const Center(
-                        child: Icon(
-                          Icons.fastfood,
-                          color: Colors.orange,
-                          size: 90,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              ),
+          ],
+        ),
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 30),
+            const SizedBox(height: 12),
+            Text(title, style: TextStyle(color: Colors.grey.shade600)),
+            const SizedBox(height: 8),
+            Text(
+              value,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-          ),
-
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-
-                children: [
-                  Text(
-                    food["foodName"],
-
-                    style: const TextStyle(
-                      fontSize: 30,
-
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-
-                  const SizedBox(height: 12),
-
-                  Text(
-                    food["category"],
-
-                    style: TextStyle(color: Colors.grey.shade600, fontSize: 18),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  // ===== Price & Quantity Cards =====
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(.10),
-                                blurRadius: 12,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              const Icon(
-                                Icons.payments_rounded,
-                                color: Colors.green,
-                                size: 30,
-                              ),
-
-                              const SizedBox(height: 10),
-
-                              const Text(
-                                "Discount Price",
-                                style: TextStyle(color: Colors.grey),
-                              ),
-
-                              const SizedBox(height: 8),
-
-                              Text(
-                                "Rs ${food["discountPrice"]}",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 22,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 15),
-
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(.10),
-                                blurRadius: 12,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              const Icon(
-                                Icons.inventory_2_outlined,
-                                color: Colors.orange,
-                                size: 30,
-                              ),
-
-                              const SizedBox(height: 10),
-
-                              const Text(
-                                "Available",
-                                style: TextStyle(color: Colors.grey),
-                              ),
-
-                              const SizedBox(height: 8),
-
-                              Text(
-                                "${food["quantity"]}",
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 22,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  // ===== Description =====
-                  Container(
-                    width: double.infinity,
-
-                    padding: const EdgeInsets.all(20),
-
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-
-                      borderRadius: BorderRadius.circular(20),
-
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(.10),
-
-                          blurRadius: 12,
-
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-
-                      children: [
-                        const Row(
-                          children: [
-                            Icon(
-                              Icons.description_outlined,
-                              color: Colors.orange,
-                            ),
-
-                            SizedBox(width: 8),
-
-                            Text(
-                              "Description",
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-
-                        const SizedBox(height: 15),
-
-                        Text(
-                          food["description"],
-
-                          style: const TextStyle(fontSize: 16, height: 1.6),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  // ===== Food Information =====
-                  Container(
-                    padding: const EdgeInsets.all(20),
-
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-
-                      borderRadius: BorderRadius.circular(20),
-
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(.10),
-
-                          blurRadius: 12,
-
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-
-                    child: Column(
-                      children: [
-                        infoTile(
-                          Icons.calendar_month,
-                          "Pickup Date",
-                          food["pickupDate"],
-                        ),
-
-                        const Divider(),
-
-                        infoTile(
-                          Icons.access_time,
-                          "Pickup Time",
-                          food["pickupTime"],
-                        ),
-
-                        const Divider(),
-
-                        infoTile(Icons.timer, "Expiry", food["expiryTime"]),
-
-                        const Divider(),
-
-                        infoTile(
-                          Icons.location_on,
-                          "Location",
-                          food["location"],
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  //==========================
-                  // STATUS & DONATION
-                  //==========================
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(.10),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              const Icon(
-                                Icons.verified,
-                                color: Colors.green,
-                                size: 30,
-                              ),
-
-                              const SizedBox(height: 10),
-
-                              const Text(
-                                "Status",
-                                style: TextStyle(color: Colors.grey),
-                              ),
-
-                              const SizedBox(height: 8),
-
-                              Text(
-                                food["status"],
-                                style: const TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.green,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      const SizedBox(width: 15),
-
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.grey.withOpacity(.10),
-                                blurRadius: 10,
-                                offset: const Offset(0, 5),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.volunteer_activism,
-                                color: food["donation"]
-                                    ? Colors.green
-                                    : Colors.grey,
-                                size: 30,
-                              ),
-
-                              const SizedBox(height: 10),
-
-                              const Text(
-                                "Donation",
-                                style: TextStyle(color: Colors.grey),
-                              ),
-
-                              const SizedBox(height: 8),
-
-                              Text(
-                                food["donation"] ? "YES" : "NO",
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: food["donation"]
-                                      ? Colors.green
-                                      : Colors.red,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 25),
-
-                  //==========================
-                  // PROVIDER DETAILS
-                  //==========================
-                  Container(
-                    padding: const EdgeInsets.all(20),
-
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-
-                      borderRadius: BorderRadius.circular(20),
-
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(.10),
-
-                          blurRadius: 12,
-
-                          offset: const Offset(0, 5),
-                        ),
-                      ],
-                    ),
-
-                    child: Row(
-                      children: [
-                        CircleAvatar(
-                          radius: 35,
-
-                          backgroundColor: Colors.orange.shade100,
-
-                          child: const Icon(
-                            Icons.store,
-
-                            size: 35,
-
-                            color: Colors.orange,
-                          ),
-                        ),
-
-                        const SizedBox(width: 15),
-
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-
-                            children: [
-                              Text(
-                                food["providerName"],
-
-                                style: const TextStyle(
-                                  fontSize: 20,
-
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-
-                              const SizedBox(height: 5),
-
-                              Text(
-                                food["providerType"],
-
-                                style: TextStyle(color: Colors.grey.shade700),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 30),
-
-                  SizedBox(
-                    width: double.infinity,
-
-                    height: 55,
-
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.orange,
-
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                      ),
-
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-
-                      icon: const Icon(Icons.arrow_back),
-
-                      label: const Text(
-                        "Back to Listings",
-
-                        style: TextStyle(fontSize: 18, color: Colors.white),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
-  //========================================================
-  // INFO TILE WIDGET
-  //========================================================
-
-  Widget infoTile(IconData icon, String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xffF8F9FB),
+      body: Stack(
         children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(.10),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(icon, color: Colors.orange, size: 22),
-          ),
-
-          const SizedBox(width: 15),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(color: Colors.grey, fontSize: 13),
+          CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                expandedHeight: 320,
+                pinned: true,
+                elevation: 0,
+                backgroundColor: Colors.orange,
+                leading: IconButton(
+                  icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  onPressed: () => Navigator.pop(context),
                 ),
+                flexibleSpace: FlexibleSpaceBar(background: _imageSection()),
+              ),
 
-                const SizedBox(height: 3),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      /// FOOD NAME
+                      Text(
+                        foodName,
+                        style: const TextStyle(
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
 
-                Text(
-                  value.toString(),
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                      const SizedBox(height: 8),
+
+                      /// CATEGORY
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(.1),
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        child: Text(
+                          category,
+                          style: const TextStyle(
+                            color: Colors.orange,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      Row(
+                        children: [
+                          infoCard(
+                            Icons.inventory_2_outlined,
+                            Colors.orange,
+                            "Quantity",
+                            quantity,
+                          ),
+
+                          const SizedBox(width: 15),
+
+                          infoCard(
+                            donation ? Icons.volunteer_activism : Icons.sell,
+                            donation ? Colors.green : Colors.blue,
+                            donation ? "Price" : "Discount",
+                            donation ? "FREE" : "Rs 0",
+                          ),
+                        ],
+                      ),
+
+                      const SizedBox(height: 25),
+
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(.05),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          children: [
+                            const CircleAvatar(
+                              backgroundColor: Colors.orange,
+                              child: Icon(Icons.person, color: Colors.white),
+                            ),
+
+                            const SizedBox(width: 15),
+
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    "Provider",
+                                    style: TextStyle(color: Colors.grey),
+                                  ),
+
+                                  Text(
+                                    providerName,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 17,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      Container(
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(.05),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(Icons.location_on, color: Colors.red),
+
+                            const SizedBox(width: 12),
+
+                            Expanded(
+                              child: Text(
+                                location,
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(18),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(.05),
+                              blurRadius: 10,
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Description",
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 18,
+                              ),
+                            ),
+
+                            const SizedBox(height: 12),
+
+                            Text(
+                              description,
+                              style: const TextStyle(fontSize: 16, height: 1.6),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 120),
+                    ],
                   ),
                 ),
-              ],
+              ),
+            ],
+          ),
+
+          Positioned(
+            left: 20,
+            right: 20,
+            bottom: 20,
+            child: SizedBox(
+              height: 60,
+              child: ElevatedButton.icon(
+                onPressed: isLoading ? null : _claimDonation,
+                icon: const Icon(Icons.volunteer_activism),
+                label: Text(isLoading ? "Sending..." : "Claim Donation"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18),
+                  ),
+                ),
+              ),
             ),
           ),
+
+          if (isLoading)
+            Container(
+              color: Colors.black26,
+              child: const Center(child: CircularProgressIndicator()),
+            ),
         ],
       ),
     );

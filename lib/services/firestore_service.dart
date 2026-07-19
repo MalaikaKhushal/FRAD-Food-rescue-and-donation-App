@@ -13,7 +13,7 @@ class FirestoreService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // ==========================================================
-  // ORIGINAL NOTIFICATION METHODS (AS PER YOUR FIRST FILE)
+  // ORIGINAL NOTIFICATION METHODS
   // ==========================================================
 
   /// Call this whenever a provider successfully adds a new food listing.
@@ -237,7 +237,7 @@ class FirestoreService {
   }
 
   // ==========================================================
-  // CUSTOMER NOTIFICATIONS (FIXED: INDEX ERROR REMOVED)
+  // CUSTOMER NOTIFICATIONS
   // ==========================================================
 
   Stream<List<NotificationModel>> getCustomerNotifications() {
@@ -250,7 +250,6 @@ class FirestoreService {
     return _firestore
         .collection("notifications")
         .where("targetRole", isEqualTo: "receiver")
-        // 🛠️ .orderBy ko hata diya hai taake index error 100% khatam ho jaye
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
@@ -279,7 +278,6 @@ class FirestoreService {
 
           for (var doc in snapshot.docs) {
             final data = doc.data();
-
             final List<dynamic> readBy = data["readBy"] ?? [];
 
             if (!readBy.contains(user.uid)) {
@@ -636,7 +634,7 @@ class FirestoreService {
   }
 
   // ==========================================================
-  // NOTIFY CUSTOMER — ORDER STATUS UPDATE (✅ RESTORED BACK)
+  // NOTIFY CUSTOMER — ORDER STATUS UPDATE
   // ==========================================================
   Future<void> notifyCustomerOrderStatus({
     required String customerId,
@@ -688,14 +686,13 @@ class FirestoreService {
 
       if (!readBy.contains(user.uid)) {
         readBy.add(user.uid);
-
         await doc.reference.update({"readBy": readBy});
       }
     }
   }
 
   // ==========================================================
-  // SAVED FOODS (WISHLIST MODULE) — ✅ NEW FEAT WITHOUT BREAKING OLD CODE
+  // SAVED FOODS (WISHLIST MODULE)
   // ==========================================================
   Stream<bool> isFoodSaved(String foodId) {
     final user = _auth.currentUser;
@@ -772,8 +769,9 @@ class FirestoreService {
           }
         });
   }
+
   // ==========================================================
-  // CUSTOMER DASHBOARD PROFILE COUNTERS (✅ ADDED SAFELY TO AVOID BREAKING CODE)
+  // CUSTOMER DASHBOARD PROFILE COUNTERS
   // ==========================================================
 
   Stream<int> getSavedFoodCount() {
@@ -796,5 +794,32 @@ class FirestoreService {
         .where("customerId", isEqualTo: user.uid)
         .snapshots()
         .map((snapshot) => snapshot.docs.length);
+  }
+
+  // ==========================================================
+  // CLAIM DONATION
+  // ==========================================================
+  Future<void> claimDonation({
+    required String foodId,
+    required String providerId,
+  }) async {
+    String id = FirebaseFirestore.instance
+        .collection("donation_claims")
+        .doc()
+        .id;
+
+    await FirebaseFirestore.instance.collection("donation_claims").doc(id).set({
+      "claimId": id,
+      "foodId": foodId,
+      "providerId": providerId,
+      "receiverId": currentUser!.uid,
+      "status": "Pending",
+      "createdAt": Timestamp.now(),
+    });
+
+    await FirebaseFirestore.instance
+        .collection("food_listings")
+        .doc(foodId)
+        .update({"status": "Claimed"});
   }
 }
