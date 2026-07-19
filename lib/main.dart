@@ -24,6 +24,7 @@ import 'screens/saved_food_screen.dart';
 import 'screens/customer_profile_screen.dart';
 import 'screens/provider_profile_screen.dart';
 import 'package:frad/screens/provider_qr_screen.dart';
+import 'screens/provider_analytics_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -63,12 +64,12 @@ class FRADApp extends StatelessWidget {
         '/Reservations': (context) => const ReservationsScreen(),
         '/providerReservations': (context) => const ReservationsScreen(),
 
-        // ✅ FIXED ROUTES (Ab saari screens khuleingi)
+        // --- Fixed Provider Routes & Analytics ---
         '/donations': (context) => const DonationsScreen(),
         '/providerQr': (context) => const ProviderQrScreen(),
-        '/providerOrders': (context) =>
-            const OrdersScreen(), // Agar orders screen same hai, toh yeh connect ho gayi.
+        '/providerOrders': (context) => const OrdersScreen(),
         '/providerProfile': (context) => const ProviderProfileScreen(),
+        '/analytics': (context) => const ProviderAnalyticsScreen(),
 
         // --- Dynamic Food Details ---
         '/foodDetails': (context) {

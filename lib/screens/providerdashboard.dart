@@ -41,6 +41,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
     {"icon": Icons.inventory_2_outlined, "title": "My Listings"},
     {"icon": Icons.receipt_long, "title": "Orders"},
     {"icon": Icons.qr_code_2_rounded, "title": "Payment QR"},
+    {"icon": Icons.analytics, "title": "Analytics"},
     {"icon": Icons.volunteer_activism, "title": "Donations"},
   ];
 
@@ -547,6 +548,9 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
           borderRadius: BorderRadius.circular(18),
           onTap: () {
             switch (item["title"]) {
+              case "Analytics":
+                Navigator.pushNamed(context, "/analytics");
+                break;
               case "Add Food":
                 Navigator.pushNamed(context, "/addFood");
                 break;

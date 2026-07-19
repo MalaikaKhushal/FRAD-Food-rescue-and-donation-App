@@ -741,6 +741,81 @@ class FirestoreService {
       return "";
     }
   }
+  //==================================================
+  // TOTAL REVENUE
+  //==================================================
+
+  Stream<double> getTotalRevenue() {
+    if (currentUser == null) {
+      return Stream.value(0);
+    }
+
+    return _firestore
+        .collection("reservations")
+        .where("providerId", isEqualTo: currentUser!.uid)
+        .where("status", isEqualTo: "Completed")
+        .snapshots()
+        .map((snapshot) {
+          double total = 0;
+
+          for (var doc in snapshot.docs) {
+            total += (doc["price"] ?? 0).toDouble();
+          }
+
+          return total;
+        });
+  }
+
+  //==================================================
+  // PENDING ORDERS
+  //==================================================
+
+  Stream<int> getPendingOrders() {
+    if (currentUser == null) {
+      return Stream.value(0);
+    }
+
+    return _firestore
+        .collection("reservations")
+        .where("providerId", isEqualTo: currentUser!.uid)
+        .where("status", isEqualTo: "Pending")
+        .snapshots()
+        .map((event) => event.docs.length);
+  }
+
+  //==================================================
+  // COMPLETED ORDERS
+  //==================================================
+
+  Stream<int> getCompletedOrders() {
+    if (currentUser == null) {
+      return Stream.value(0);
+    }
+
+    return _firestore
+        .collection("reservations")
+        .where("providerId", isEqualTo: currentUser!.uid)
+        .where("status", isEqualTo: "Completed")
+        .snapshots()
+        .map((event) => event.docs.length);
+  }
+
+  //==================================================
+  // CANCELLED ORDERS
+  //==================================================
+
+  Stream<int> getCancelledOrders() {
+    if (currentUser == null) {
+      return Stream.value(0);
+    }
+
+    return _firestore
+        .collection("reservations")
+        .where("providerId", isEqualTo: currentUser!.uid)
+        .where("status", isEqualTo: "Cancelled")
+        .snapshots()
+        .map((event) => event.docs.length);
+  }
   //======================================================
   // PROVIDER ORDERS
   //======================================================
