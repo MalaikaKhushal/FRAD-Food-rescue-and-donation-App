@@ -1,10 +1,11 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../models/user_model.dart';
 import '../services/firestore_service.dart';
+import 'loginscreen.dart';
 
 class ProviderProfileScreen extends StatefulWidget {
   const ProviderProfileScreen({super.key});
@@ -15,6 +16,7 @@ class ProviderProfileScreen extends StatefulWidget {
 
 class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
   final FirestoreService firestoreService = FirestoreService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   UserModel? user;
   bool loading = true;
@@ -82,6 +84,37 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
     }
   }
 
+  Future<void> logout() async {
+    final bool? confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Logout"),
+        content: const Text("Are you sure you want to logout?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Logout", style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+    await _auth.signOut();
+    if (!mounted) return;
+
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (route) => false,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (loading) {
@@ -125,10 +158,18 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
             const SizedBox(height: 24),
             _buildSectionLabel("Quick Actions"),
             _buildActionsCard([
-              _ActionItem(Icons.storefront, "My Listings", () {}),
-              _ActionItem(Icons.receipt_long, "My Orders", () {}),
-              _ActionItem(Icons.favorite, "My Donations", () {}),
-              _ActionItem(Icons.notifications_none, "Notifications", () {}),
+              _ActionItem(Icons.storefront, "My Listings", () {
+                Navigator.pushNamed(context, "/myListings");
+              }),
+              _ActionItem(Icons.receipt_long, "My Orders", () {
+                Navigator.pushNamed(context, "/providerOrders");
+              }),
+              _ActionItem(Icons.favorite, "My Donations", () {
+                Navigator.pushNamed(context, "/donations");
+              }),
+              _ActionItem(Icons.notifications_none, "Notifications", () {
+                Navigator.pushNamed(context, "/notifications");
+              }),
             ]),
             const SizedBox(height: 20),
             _buildSectionLabel("Account & Support"),
@@ -152,7 +193,7 @@ class _ProviderProfileScreenState extends State<ProviderProfileScreen> {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  onPressed: () {},
+                  onPressed: logout, // Connected to logout logic
                   icon: const Icon(Icons.logout),
                   label: const Text(
                     "Logout",

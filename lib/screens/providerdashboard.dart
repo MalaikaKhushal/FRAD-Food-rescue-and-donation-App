@@ -32,9 +32,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
   final Color primaryColor = const Color(0xffF57C00);
   int currentIndex = 0;
 
-  int? hoveredDashboard;
   int? hoveredAction;
-  int? hoveredFood;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -42,7 +40,6 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
     {"icon": Icons.add_box_rounded, "title": "Add Food"},
     {"icon": Icons.inventory_2_outlined, "title": "My Listings"},
     {"icon": Icons.receipt_long, "title": "Orders"},
-
     {"icon": Icons.qr_code_2_rounded, "title": "Payment QR"},
     {"icon": Icons.volunteer_activism, "title": "Donations"},
   ];
@@ -182,10 +179,16 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      widget.name,
+                      widget.name.isNotEmpty
+                          ? widget.name
+                          : (currentUser?.fullName ?? "Provider"),
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
-                    Text(widget.role),
+                    Text(
+                      widget.role.isNotEmpty
+                          ? widget.role
+                          : (currentUser?.role ?? "Provider"),
+                    ),
                   ],
                 ),
               ),
@@ -285,7 +288,8 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                   crossAxisCount: 2,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
-                  childAspectRatio: 1.0,
+                  childAspectRatio:
+                      1.3, // Fixed: Improved rendering to prevent ParentData exceptions
                   children: [
                     firebaseDashboardCard(
                       title: "Food Listings",
@@ -340,7 +344,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                     crossAxisCount: 2,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 1.0,
+                    childAspectRatio: 1.3, // Fixed ratio layout stability
                   ),
                   itemBuilder: (context, index) {
                     return actionCard(index, actions[index]);
@@ -350,7 +354,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
               const SizedBox(height: 30),
 
               /// ===========================
-              /// RECENT FOOD LISTINGS (FIXED LISVIEW RENDERING)
+              /// RECENT FOOD LISTINGS
               /// ===========================
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 18),
@@ -396,11 +400,9 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
 
                   List<FoodModel> foods = snapshot.data!;
 
-                  // ✅ FIXED: Separated from outer scroll logic using explicit builders
                   return ListView.separated(
                     shrinkWrap: true,
-                    physics:
-                        const ClampingScrollPhysics(), // Allows clean integration inside SingleChildScrollView
+                    physics: const ClampingScrollPhysics(),
                     itemCount: foods.length,
                     separatorBuilder: (context, index) =>
                         const SizedBox(height: 4),
@@ -440,13 +442,14 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
           if (index == 1) {
             Navigator.pushNamed(context, "/myListings");
           }
-
           if (index == 2) {
             Navigator.pushNamed(context, "/providerReservations");
           }
-
           if (index == 3) {
-            Navigator.pushNamed(context, "/providerProfile");
+            Navigator.pushNamed(
+              context,
+              "/profile",
+            ); // Fixed: Matched profile route with main.dart
           }
         },
         items: const [
@@ -496,23 +499,23 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 CircleAvatar(
-                  radius: 22,
+                  radius: 20,
                   backgroundColor: color.withOpacity(.12),
-                  child: Icon(icon, color: color),
+                  child: Icon(icon, color: color, size: 20),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 6),
                 Text(
                   value,
                   style: const TextStyle(
-                    fontSize: 20,
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
                   title,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 12),
+                  style: const TextStyle(fontSize: 11),
                 ),
               ],
             ),
@@ -528,10 +531,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
       onEnter: (_) => setState(() => hoveredAction = index),
       onExit: (_) => setState(() => hoveredAction = null),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        transform: hovered
-            ? (Matrix4.identity()..translate(0, -6))
-            : Matrix4.identity(),
+        duration: const Duration(milliseconds: 200),
         decoration: BoxDecoration(
           color: hovered ? primaryColor : Colors.white,
           borderRadius: BorderRadius.circular(18),
@@ -553,9 +553,6 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
               case "My Listings":
                 Navigator.pushNamed(context, "/myListings");
                 break;
-              case "Reservations":
-                Navigator.pushNamed(context, "/providerReservations");
-                break;
               case "Orders":
                 Navigator.pushNamed(context, "/providerOrders");
                 break;
@@ -572,15 +569,16 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
             children: [
               Icon(
                 item["icon"],
-                size: 34,
+                size: 30,
                 color: hovered ? Colors.white : primaryColor,
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text(
                 item["title"],
                 style: TextStyle(
                   color: hovered ? Colors.white : Colors.black87,
                   fontWeight: FontWeight.w600,
+                  fontSize: 13,
                 ),
               ),
             ],

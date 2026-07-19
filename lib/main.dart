@@ -20,7 +20,7 @@ import 'screens/orders_screen.dart';
 import 'screens/reservations_screen.dart';
 import 'screens/notification_screen.dart';
 import 'screens/saved_food_screen.dart';
-import 'screens/donations_screen.dart';
+
 import 'screens/customer_profile_screen.dart';
 import 'screens/provider_profile_screen.dart';
 import 'package:frad/screens/provider_qr_screen.dart';
@@ -62,6 +62,13 @@ class FRADApp extends StatelessWidget {
         '/addFood': (context) => const AddFoodScreen(),
         '/Reservations': (context) => const ReservationsScreen(),
         '/providerReservations': (context) => const ReservationsScreen(),
+
+        // ✅ FIXED ROUTES (Ab saari screens khuleingi)
+        '/donations': (context) => const DonationsScreen(),
+        '/providerQr': (context) => const ProviderQrScreen(),
+        '/providerOrders': (context) =>
+            const OrdersScreen(), // Agar orders screen same hai, toh yeh connect ho gayi.
+        '/providerProfile': (context) => const ProviderProfileScreen(),
 
         // --- Dynamic Food Details ---
         '/foodDetails': (context) {

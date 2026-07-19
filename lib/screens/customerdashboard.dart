@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:frad/screens/food_detail_screen.dart';
-import 'package:frad/screens/nearby_foods_screen.dart'; 
-import 'dart:convert'; 
+import 'package:frad/screens/nearby_foods_screen.dart';
+import 'dart:convert';
 
 import '../models/food_model.dart';
 import '../models/user_model.dart';
@@ -215,7 +215,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                 Navigator.pushNamed(
                   context,
                   "/profile",
-                ).then((_) => loadUser()); 
+                ).then((_) => loadUser());
               } else if (value == "logout") {
                 logout();
               }
@@ -355,7 +355,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                 }
               },
               decoration: InputDecoration(
-                hintText: "Search Food or City...", // ✅ UPDATED HINT
+                hintText: "Search Food or City...",
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: searchText.isNotEmpty
                     ? IconButton(
@@ -423,23 +423,29 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
               if (snapshot.hasError) {
                 return const Center(child: Text("Something went wrong"));
               }
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+
+              // Filter out donation foods from standard commercial listings
+              List<FoodModel> regularFoods = snapshot.hasData
+                  ? snapshot.data!.where((f) => !f.donation).toList()
+                  : [];
+
+              if (regularFoods.isEmpty) {
                 return const Center(
                   child: Padding(
                     padding: EdgeInsets.all(20),
                     child: Text(
-                      "No Food Available",
+                      "No Commercial Food Available",
                       style: TextStyle(fontSize: 18),
                     ),
                   ),
                 );
               }
-              List<FoodModel> foods = snapshot.data!;
               return ListView.builder(
                 shrinkWrap: true,
                 physics: const NeverScrollableScrollPhysics(),
-                itemCount: foods.length,
-                itemBuilder: (context, index) => foodCard(food: foods[index]),
+                itemCount: regularFoods.length,
+                itemBuilder: (context, index) =>
+                    foodCard(food: regularFoods[index]),
               );
             },
           ),
@@ -498,11 +504,11 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                 bool matchesCategory =
                     selectedCategory == "All" ||
                     food.providerType == selectedCategory;
-                
-                // ✅ UPDATED: Added location check here too
-                bool matchesSearch = food.foodName.toLowerCase().contains(searchText) || 
-                                     food.location.toLowerCase().contains(searchText);
-                
+
+                bool matchesSearch =
+                    food.foodName.toLowerCase().contains(searchText) ||
+                    food.location.toLowerCase().contains(searchText);
+
                 return matchesCategory && matchesSearch;
               }).toList();
 
@@ -536,7 +542,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
               }
             },
             decoration: InputDecoration(
-              hintText: "Search Food or City...", // ✅ UPDATED HINT
+              hintText: "Search Food or City...",
               prefixIcon: const Icon(Icons.search),
               suffixIcon: IconButton(
                 icon: const Icon(Icons.close),
@@ -572,13 +578,18 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                 return _buildNoResultsFound();
               }
               List<FoodModel> foods = snapshot.data!;
-              
-              // ✅ FIXED: Filter now checks foodName, providerName, AND food.location
+
               List<FoodModel> searchResults = foods.where((food) {
-                final nameMatch = food.foodName.toLowerCase().contains(searchText);
-                final providerMatch = food.providerName.toLowerCase().contains(searchText);
-                final locationMatch = food.location.toLowerCase().contains(searchText); 
-                
+                final nameMatch = food.foodName.toLowerCase().contains(
+                  searchText,
+                );
+                final providerMatch = food.providerName.toLowerCase().contains(
+                  searchText,
+                );
+                final locationMatch = food.location.toLowerCase().contains(
+                  searchText,
+                );
+
                 return nameMatch || providerMatch || locationMatch;
               }).toList();
 
@@ -804,34 +815,62 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                 const Spacer(),
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: primaryColor,
+                    backgroundColor: food.donation
+                        ? Colors.green
+                        : primaryColor,
                   ),
                   onPressed: () async {
-                    String result = await firestoreService.reserveFood(
-                      food: food,
-                    );
-
-                    if (!mounted) return;
-
-                    if (result == "success") {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Reserved successfully!"),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
+                    if (food.donation) {
+                      // Dynamically switch to donation claims flow if food is donation
+                      try {
+                        await firestoreService.claimDonation(
+                          foodId: food.foodId,
+                          providerId: food.providerId,
+                        );
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Donation claimed successfully!"),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } catch (e) {
+                        if (!mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Claim failed: ${e.toString()}"),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     } else {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(result),
-                          backgroundColor: Colors.red,
-                        ),
+                      // Standard commercial reservation flow
+                      String result = await firestoreService.reserveFood(
+                        food: food,
                       );
+
+                      if (!mounted) return;
+
+                      if (result == "success") {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Reserved successfully!"),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(result),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+                      }
                     }
                   },
-                  child: const Text(
-                    "Reserve",
-                    style: TextStyle(color: Colors.white),
+                  child: Text(
+                    food.donation ? "Claim" : "Reserve",
+                    style: const TextStyle(color: Colors.white),
                   ),
                 ),
               ],
