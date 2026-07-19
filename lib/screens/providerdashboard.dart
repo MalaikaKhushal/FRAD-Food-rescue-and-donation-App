@@ -41,7 +41,9 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
   final List<Map<String, dynamic>> actions = [
     {"icon": Icons.add_box_rounded, "title": "Add Food"},
     {"icon": Icons.inventory_2_outlined, "title": "My Listings"},
-    {"icon": Icons.receipt_long, "title": "Reservations"},
+    {"icon": Icons.receipt_long, "title": "Orders"},
+
+    {"icon": Icons.qr_code_2_rounded, "title": "Payment QR"},
     {"icon": Icons.volunteer_activism, "title": "Donations"},
   ];
 
@@ -338,7 +340,7 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
                     crossAxisCount: 2,
                     crossAxisSpacing: 16,
                     mainAxisSpacing: 16,
-                    childAspectRatio: 1.45,
+                    childAspectRatio: 1.0,
                   ),
                   itemBuilder: (context, index) {
                     return actionCard(index, actions[index]);
@@ -434,6 +436,18 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
           setState(() {
             currentIndex = index;
           });
+
+          if (index == 1) {
+            Navigator.pushNamed(context, "/myListings");
+          }
+
+          if (index == 2) {
+            Navigator.pushNamed(context, "/providerReservations");
+          }
+
+          if (index == 3) {
+            Navigator.pushNamed(context, "/providerProfile");
+          }
         },
         items: const [
           BottomNavigationBarItem(
@@ -542,8 +556,14 @@ class _ProviderDashboardState extends State<ProviderDashboard> {
               case "Reservations":
                 Navigator.pushNamed(context, "/providerReservations");
                 break;
+              case "Orders":
+                Navigator.pushNamed(context, "/providerOrders");
+                break;
               case "Donations":
                 Navigator.pushNamed(context, "/donations");
+                break;
+              case "Payment QR":
+                Navigator.pushNamed(context, "/providerQr");
                 break;
             }
           },

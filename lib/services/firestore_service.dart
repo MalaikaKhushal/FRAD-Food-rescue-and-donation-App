@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
+import 'dart:typed_data';
 
 import '../models/food_model.dart';
 import '../models/user_model.dart';
@@ -619,6 +620,123 @@ class FirestoreService {
       print("Storage Error: $e");
       return "";
     }
+  }
+
+  Future<String> uploadQrImage(File imageFile, String uid) async {
+    try {
+      final FirebaseStorage storage = FirebaseStorage.instance;
+
+      Reference ref = storage.ref().child("provider_qr").child("$uid.jpg");
+
+      UploadTask uploadTask = ref.putFile(imageFile);
+
+      TaskSnapshot snapshot = await uploadTask;
+
+      String url = await snapshot.ref.getDownloadURL();
+
+      await _firestore.collection("users").doc(uid).update({"qrImage": url});
+
+      return url;
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
+  Future<String> uploadQrImageBytes(Uint8List bytes, String uid) async {
+    try {
+      final FirebaseStorage storage = FirebaseStorage.instance;
+
+      Reference ref = storage.ref().child("provider_qr").child("$uid.jpg");
+
+      UploadTask uploadTask = ref.putData(
+        bytes,
+        SettableMetadata(contentType: "image/jpeg"),
+      );
+
+      TaskSnapshot snapshot = await uploadTask;
+
+      String url = await snapshot.ref.getDownloadURL();
+
+      await _firestore.collection("users").doc(uid).update({"qrImage": url});
+
+      return url;
+    } catch (e) {
+      throw Exception(e);
+    }
+  }
+
+  Future<String> getProviderQr() async {
+    final uid = _auth.currentUser!.uid;
+
+    DocumentSnapshot doc = await _firestore.collection("users").doc(uid).get();
+
+    return doc["qrImage"] ?? "";
+  }
+
+  Future<String> uploadProfileImage(File imageFile, String uid) async {
+    try {
+      final FirebaseStorage storage = FirebaseStorage.instance;
+
+      Reference ref = storage.ref().child("profile_images").child("$uid.jpg");
+
+      UploadTask uploadTask = ref.putFile(imageFile);
+
+      TaskSnapshot snapshot = await uploadTask;
+
+      return await snapshot.ref.getDownloadURL();
+    } catch (e) {
+      return "";
+    }
+  }
+
+  Future<String> uploadProfileImageBytes(Uint8List bytes, String uid) async {
+    try {
+      final FirebaseStorage storage = FirebaseStorage.instance;
+
+      Reference ref = storage.ref().child("profile_images").child("$uid.jpg");
+
+      UploadTask uploadTask = ref.putData(
+        bytes,
+        SettableMetadata(contentType: "image/jpeg"),
+      );
+
+      TaskSnapshot snapshot = await uploadTask;
+
+      return await snapshot.ref.getDownloadURL();
+    } catch (e) {
+      return "";
+    }
+  }
+  //======================================================
+  // PROVIDER ORDERS
+  //======================================================
+
+  Stream<QuerySnapshot> getProviderOrders() {
+    return _firestore
+        .collection("reservations")
+        .where("providerId", isEqualTo: currentUser!.uid)
+        .orderBy("createdAt", descending: true)
+        .snapshots();
+  }
+
+  //======================================================
+  // UPDATE STATUS
+  //======================================================
+
+  //======================================================
+  // DELETE ORDER
+  //======================================================
+
+  Future<void> deleteReservation(String reservationId) async {
+    await _firestore.collection("reservations").doc(reservationId).delete();
+  }
+
+  Future<void> updateProfileImage(String imageUrl) async {
+    if (currentUser == null) return;
+
+    await _firestore.collection("users").doc(currentUser!.uid).update({
+      "profileImage": imageUrl,
+    });
   }
 
   Future<void> acceptReservation(String reservationId) async {
