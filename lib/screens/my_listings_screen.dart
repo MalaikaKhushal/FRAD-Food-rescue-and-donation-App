@@ -119,10 +119,29 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
 
                 if (selectedStatus != "All") {
                   foodList = foodList.where((food) {
-                    return food["status"] == selectedStatus;
+                    final status = (food["status"] ?? "")
+                        .toString()
+                        .toLowerCase();
+                    final donation = food["donation"] == true;
+
+                    switch (selectedStatus) {
+                      case "Active":
+                        return status == "available" || status == "active";
+
+                      case "Reserved":
+                        return status == "reserved";
+
+                      case "Expired":
+                        return status == "expired";
+
+                      case "Donated":
+                        return donation == true;
+
+                      default:
+                        return true;
+                    }
                   }).toList();
                 }
-
                 if (foodList.isEmpty) {
                   return Center(
                     child: Column(
@@ -500,22 +519,66 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
   }
 
   Widget buildAnalytics() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection("food_listings")
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) {
+          return const SizedBox();
+        }
 
-      child: Row(
-        children: [
-          Expanded(child: analyticsCard("24", "Listings", Colors.orange)),
+        final docs = snapshot.data!.docs;
 
-          const SizedBox(width: 12),
+        int total = docs.length;
+        int reserved = 0;
+        int expired = 0;
 
-          Expanded(child: analyticsCard("11", "Reserved", Colors.green)),
+        for (var doc in docs) {
+          final data = doc.data() as Map<String, dynamic>;
 
-          const SizedBox(width: 12),
+          String status = (data["status"] ?? "").toString().toLowerCase();
 
-          Expanded(child: analyticsCard("5", "Expired", Colors.red)),
-        ],
-      ),
+          if (status == "reserved") {
+            reserved++;
+          }
+
+          if (status == "expired") {
+            expired++;
+          }
+        }
+
+        return Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Row(
+            children: [
+              Expanded(
+                child: analyticsCard(
+                  total.toString(),
+                  "Listings",
+                  Colors.orange,
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: analyticsCard(
+                  reserved.toString(),
+                  "Reserved",
+                  Colors.green,
+                ),
+              ),
+
+              const SizedBox(width: 12),
+
+              Expanded(
+                child: analyticsCard(expired.toString(), "Expired", Colors.red),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
