@@ -1,12 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-
+import '../models/reservation_model.dart';
 import '../services/firestore_service.dart';
 
-// ─────────────────────────────────────────────────────────────
-//  FRAD – Reservations Screen (Provider Side)
-//  Fixed-height header (no collapse) — eliminates overflow.
-// ─────────────────────────────────────────────────────────────
 class ReservationsScreen extends StatefulWidget {
   const ReservationsScreen({super.key});
 
@@ -184,7 +180,11 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
         decoration: InputDecoration(
           hintText: "Search by customer name...",
           hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
-          prefixIcon: Icon(Icons.search_rounded, color: primary, size: 22),
+          prefixIcon: const Icon(
+            Icons.search_rounded,
+            color: primary,
+            size: 22,
+          ),
           suffixIcon: searchController.text.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.close_rounded, size: 18),
@@ -269,55 +269,45 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
   }
 
   Widget _buildReservationsList() {
-    return StreamBuilder<QuerySnapshot>(
+    return StreamBuilder<List<ReservationModel>>(
       stream: firestoreService.getProviderReservations(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: primary));
+          return const Center(child: CircularProgressIndicator());
         }
-
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return _emptyState();
         }
 
-        List<DocumentSnapshot> reservations = snapshot.data!.docs;
+        List<ReservationModel> list = snapshot.data!;
 
+        // 1. Filter by Tab Status
         if (selectedStatus != "All") {
-          reservations = reservations
-              .where((doc) => doc["status"] == selectedStatus)
+          list = list
+              .where(
+                (res) =>
+                    res.status.toLowerCase() == selectedStatus.toLowerCase(),
+              )
               .toList();
         }
 
-        if (searchController.text.trim().isNotEmpty) {
-          reservations = reservations.where((doc) {
-            return doc["customerId"].toString().toLowerCase().contains(
-              searchController.text.toLowerCase(),
-            );
-          }).toList();
+        // 2. Filter by Search Query
+        String search = searchController.text.trim().toLowerCase();
+        if (search.isNotEmpty) {
+          list = list
+              .where((res) => res.customerName.toLowerCase().contains(search))
+              .toList();
         }
 
-        if (reservations.isEmpty) {
+        if (list.isEmpty) {
           return _emptyState();
         }
 
         return ListView.builder(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-          physics: const BouncingScrollPhysics(),
-          itemCount: reservations.length,
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          itemCount: list.length,
           itemBuilder: (context, index) {
-            return TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: 1),
-              duration: Duration(milliseconds: 250 + (index * 40)),
-              curve: Curves.easeOut,
-              builder: (context, value, child) => Opacity(
-                opacity: value,
-                child: Transform.translate(
-                  offset: Offset(0, (1 - value) * 16),
-                  child: child,
-                ),
-              ),
-              child: _buildReservationCard(reservations[index]),
-            );
+            return _buildReservationCard(list[index]);
           },
         );
       },
@@ -356,156 +346,128 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
     );
   }
 
-  Widget _buildReservationCard(DocumentSnapshot reservation) {
-    return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance
-          .collection("food_listings")
-          .doc(reservation["foodId"])
-          .get(),
-      builder: (context, foodSnapshot) {
-        if (!foodSnapshot.hasData || !foodSnapshot.data!.exists) {
-          return const SizedBox();
-        }
+  Widget _buildReservationCard(ReservationModel reservation) {
+    final color = _statusColor(reservation.status);
 
-        final food = foodSnapshot.data!.data() as Map<String, dynamic>;
-
-        return FutureBuilder<DocumentSnapshot>(
-          future: FirebaseFirestore.instance
-              .collection("users")
-              .doc(reservation["customerId"])
-              .get(),
-          builder: (context, userSnapshot) {
-            if (!userSnapshot.hasData || !userSnapshot.data!.exists) {
-              return const SizedBox();
-            }
-
-            final user = userSnapshot.data!.data() as Map<String, dynamic>;
-            final status = reservation["status"] as String;
-            final color = _statusColor(status);
-
-            return Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(22),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 16,
-                    offset: const Offset(0, 6),
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Hero(
+                  tag: reservation.reservationId,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.network(
+                      reservation.imageUrl,
+                      width: 78,
+                      height: 78,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        width: 78,
+                        height: 78,
+                        color: primary.withOpacity(0.08),
+                        child: const Icon(
+                          Icons.fastfood_rounded,
+                          color: primary,
+                          size: 30,
+                        ),
+                      ),
+                    ),
                   ),
-                ],
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Hero(
-                          tag: reservation.id,
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(16),
-                            child: Image.network(
-                              food["imageUrl"] ?? '',
-                              width: 78,
-                              height: 78,
-                              fit: BoxFit.cover,
-                              errorBuilder: (_, __, ___) => Container(
-                                width: 78,
-                                height: 78,
-                                color: primary.withOpacity(0.08),
-                                child: const Icon(
-                                  Icons.fastfood_rounded,
-                                  color: primary,
-                                  size: 30,
-                                ),
-                              ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        reservation.foodName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          CircleAvatar(
+                            radius: 9,
+                            backgroundColor: primary.withOpacity(0.1),
+                            child: const Icon(
+                              Icons.person,
+                              size: 11,
+                              color: primary,
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                food["foodName"] ?? '',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              reservation.customerName,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
                               ),
-                              const SizedBox(height: 4),
-                              Row(
-                                children: [
-                                  CircleAvatar(
-                                    radius: 9,
-                                    backgroundColor: primary.withOpacity(0.1),
-                                    child: const Icon(
-                                      Icons.person,
-                                      size: 11,
-                                      color: primary,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 6),
-                                  Expanded(
-                                    child: Text(
-                                      user["fullName"] ?? '',
-                                      style: const TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w600,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              Row(
-                                children: [
-                                  Icon(
-                                    Icons.calendar_today_rounded,
-                                    size: 12,
-                                    color: Colors.grey.shade500,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Expanded(
-                                    child: Text(
-                                      "${food["pickupDate"] ?? '-'} • ${food["pickupTime"] ?? '-'}",
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey.shade600,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ],
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        _statusBadge(status, color),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    const Divider(height: 1, color: Color(0xffF1F1F1)),
-                    const SizedBox(height: 12),
-                    _buildActionRow(reservation, food, color, status),
-                  ],
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.calendar_today_rounded,
+                            size: 12,
+                            color: Colors.grey.shade500,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              "${reservation.pickupDate} • ${reservation.pickupTime}",
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade600,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
-        );
-      },
+                const SizedBox(width: 8),
+                _statusBadge(reservation.status, color),
+              ],
+            ),
+            const SizedBox(height: 14),
+            const Divider(height: 1, color: Color(0xffF1F1F1)),
+            const SizedBox(height: 12),
+            _buildActionRow(reservation, color, reservation.status),
+          ],
+        ),
+      ),
     );
   }
 
@@ -535,15 +497,14 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
   }
 
   Widget _buildActionRow(
-    DocumentSnapshot reservation,
-    Map<String, dynamic> food,
+    ReservationModel reservation,
     Color color,
     String status,
   ) {
     Future<void> notify(String newStatus) async {
       await firestoreService.notifyCustomerOrderStatus(
-        customerId: reservation["customerId"],
-        foodName: food["foodName"] ?? '',
+        customerId: reservation.customerId,
+        foodName: reservation.foodName,
         status: newStatus,
       );
     }
@@ -559,7 +520,10 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
             color: const Color(0xff10B981),
             filled: true,
             onTap: () async {
-              await firestoreService.acceptReservation(reservation.id);
+              await firestoreService.updateReservationStatus(
+                reservation.reservationId,
+                "Accepted",
+              );
               await notify("Accepted");
             },
           ),
@@ -570,7 +534,10 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
             color: primary,
             filled: true,
             onTap: () async {
-              await firestoreService.readyReservation(reservation.id);
+              await firestoreService.updateReservationStatus(
+                reservation.reservationId,
+                "Ready",
+              );
               await notify("Ready");
             },
           ),
@@ -581,7 +548,10 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
             color: const Color(0xff0D9488),
             filled: true,
             onTap: () async {
-              await firestoreService.completeOrder(reservation.id);
+              await firestoreService.updateReservationStatus(
+                reservation.reservationId,
+                "Completed",
+              );
               await notify("Completed");
             },
           ),
@@ -592,7 +562,10 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
             color: const Color(0xffEF4444),
             filled: false,
             onTap: () async {
-              await firestoreService.cancelOrder(reservation.id);
+              await firestoreService.updateReservationStatus(
+                reservation.reservationId,
+                "Cancelled",
+              );
               await notify("Cancelled");
             },
           ),
@@ -644,6 +617,8 @@ class _AnimatedActionButtonState extends State<_AnimatedActionButton> {
     setState(() => _loading = true);
     try {
       await widget.onTap();
+    } catch (e) {
+      debugPrint("Action Error: $e");
     } finally {
       if (mounted) setState(() => _loading = false);
     }

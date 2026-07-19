@@ -1,18 +1,22 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 
 import '../models/food_model.dart';
 import '../models/user_model.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'dart:io';
+import '../models/reservation_model.dart';
+import '../models/notification_model.dart';
 
 class FirestoreService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  // Add these methods inside your FirestoreService class (firestore_service.dart)
+
+  // ==========================================================
+  // ORIGINAL NOTIFICATION METHODS (AS PER YOUR FIRST FILE)
+  // ==========================================================
 
   /// Call this whenever a provider successfully adds a new food listing.
-  /// It creates a notification document that all receivers/customers can see.
   Future<void> createNewFoodNotification({
     required String foodName,
     required String providerName,
@@ -28,7 +32,6 @@ class FirestoreService {
   }
 
   /// Stream of notifications relevant to the current logged-in user's role.
-  /// Pass 'receiver' on the customer dashboard, 'provider' on the provider dashboard.
   Stream<QuerySnapshot> getNotificationsForRole(String role) {
     return FirebaseFirestore.instance
         .collection('notifications')
@@ -160,7 +163,7 @@ class FirestoreService {
   }
 
   // ==========================================================
-  // UPDATE FOOD (✅ FIXED - Using Timestamp)
+  // UPDATE FOOD
   // ==========================================================
 
   Future<String> updateFood(String foodId, Map<String, dynamic> data) async {
@@ -169,12 +172,11 @@ class FirestoreService {
         throw Exception("Food ID cannot be empty");
       }
 
-      // Remove updatedAt if it already exists in data
       data.remove("updatedAt");
 
       await _firestore.collection("food_listings").doc(foodId).update({
         ...data,
-        "updatedAt": Timestamp.now(), // ✅ Use Timestamp.now()
+        "updatedAt": Timestamp.now(),
       });
 
       return "success";
@@ -202,76 +204,320 @@ class FirestoreService {
   }
 
   // ==========================================================
-  // RESERVE FOOD (✅ FIXED - Using Timestamp)
+  // SEND NOTIFICATION
   // ==========================================================
 
-  Future<String> reserveFood({
-    required String foodId,
-    required String providerId,
+  Future<String> sendNotification({
+    required String receiverId,
+    required String senderId,
+    required String reservationId,
+    required String title,
+    required String message,
+    required String type,
   }) async {
     try {
-      if (currentUser == null) {
-        throw Exception("User not logged in");
-      }
+      final notificationRef = _firestore.collection("notifications").doc();
 
-      String reservationId = _firestore.collection("reservations").doc().id;
-
-      await _firestore.collection("reservations").doc(reservationId).set({
+      await notificationRef.set({
+        "notificationId": notificationRef.id,
+        "receiverId": receiverId,
+        "senderId": senderId,
         "reservationId": reservationId,
-        "foodId": foodId,
-        "customerId": currentUser!.uid,
-        "providerId": providerId,
-        "status": "Pending",
-        "reservedAt": Timestamp.now(), // ✅ Use Timestamp.now()
+        "title": title,
+        "message": message,
+        "type": type,
+        "isRead": false,
+        "createdAt": FieldValue.serverTimestamp(),
       });
 
       return "success";
     } catch (e) {
-      return "Error reserving food: ${e.toString()}";
+      return e.toString();
     }
   }
 
   // ==========================================================
-  // CUSTOMER RESERVATIONS
+  // CUSTOMER NOTIFICATIONS
   // ==========================================================
 
-  Stream<QuerySnapshot> getCustomerReservations() {
-    if (currentUser == null) {
+  Stream<List<NotificationModel>> getCustomerNotifications() {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      return Stream.value([]);
+    }
+
+    return _firestore
+        .collection("notifications")
+        .where("targetRole", isEqualTo: "receiver")
+        .orderBy("createdAt", descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => NotificationModel.fromMap(doc.data()))
+              .toList();
+        });
+  }
+
+  // ==========================================================
+  // UNREAD COUNT
+  // ==========================================================
+
+  Stream<int> getUnreadNotificationCount() {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      return Stream.value(0);
+    }
+
+    return _firestore
+        .collection("notifications")
+        .where("targetRole", isEqualTo: "receiver")
+        .snapshots()
+        .map((snapshot) {
+          int unread = 0;
+
+          for (var doc in snapshot.docs) {
+            final data = doc.data();
+
+            final List<dynamic> readBy = data["readBy"] ?? [];
+
+            if (!readBy.contains(user.uid)) {
+              unread++;
+            }
+          }
+
+          return unread;
+        });
+  }
+
+  // ==========================================================
+  // GET CUSTOMER ORDERS
+  // ==========================================================
+
+  Stream<List<ReservationModel>> getCustomerOrders() {
+    final user = _auth.currentUser;
+
+    if (user == null) {
+      return Stream.value([]);
+    }
+
+    return _firestore
+        .collection("reservations")
+        .where("customerId", isEqualTo: user.uid)
+        .orderBy("createdAt", descending: true)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs
+              .map((doc) => ReservationModel.fromMap(doc.data()))
+              .toList();
+        });
+  }
+
+  // ==========================================================
+  // UPDATE RESERVATION STATUS
+  // ==========================================================
+
+  Future<String> updateReservationStatus(
+    String reservationId,
+    String status,
+  ) async {
+    try {
+      await _firestore.collection("reservations").doc(reservationId).update({
+        "status": status,
+        "updatedAt": Timestamp.now(),
+      });
+      return "success";
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  // ==========================================================
+  // NOTIFY PROVIDER — NEW RESERVATION
+  // ==========================================================
+  Future<void> notifyProviderNewReservation({
+    required String providerId,
+    required String customerName,
+    required String foodName,
+    required String quantity,
+  }) async {
+    try {
+      String message;
+      if (quantity == "1") {
+        message = '$customerName reserved your "$foodName". 🍔';
+      } else {
+        message = '$customerName reserved $quantity of your "$foodName". 🍔';
+      }
+
+      DocumentReference docRef = _firestore.collection('notifications').doc();
+
+      await docRef.set({
+        'notificationId': docRef.id,
+        'title': 'New Reservation!',
+        'message': message,
+        'targetRole': 'provider',
+        'targetUserId': providerId,
+        'senderId': _auth.currentUser?.uid ?? '',
+        'type': 'new_reservation',
+        'isRead': false,
+        'createdAt': FieldValue.serverTimestamp(),
+        'readBy': <String>[],
+      });
+    } catch (e) {
+      print("Error creating provider notification: $e");
+    }
+  }
+
+  // ==========================================================
+  // RESERVE FOOD
+  // ==========================================================
+  Future<String> reserveFood({required FoodModel food}) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) {
+        return "Please login first";
+      }
+
+      final customerDoc = await _firestore
+          .collection("users")
+          .doc(user.uid)
+          .get();
+      final customerData = customerDoc.data();
+
+      DocumentReference reservationRef = _firestore
+          .collection("reservations")
+          .doc();
+
+      double finalPrice = food.donation ? 0.0 : food.discountPrice;
+
+      await reservationRef.set({
+        "reservationId": reservationRef.id,
+        "foodId": food.foodId,
+        "customerId": user.uid,
+        "customerName": customerData?["fullName"] ?? "Anonymous Customer",
+        "providerId": food.providerId,
+        "providerName": food.providerName,
+        "foodName": food.foodName,
+        "imageUrl": food.imageUrl,
+        "quantity": 1,
+        "price": finalPrice,
+        "pickupDate": food.pickupDate,
+        "pickupTime": food.pickupTime,
+        "status": "Pending",
+        "createdAt": FieldValue.serverTimestamp(),
+      });
+
+      await notifyProviderNewReservation(
+        providerId: food.providerId,
+        customerName: customerData?["fullName"] ?? "Anonymous Customer",
+        foodName: food.foodName,
+        quantity: "1",
+      );
+
+      return "success";
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  // ==========================================================
+  // GET CUSTOMER RESERVATIONS
+  // ==========================================================
+
+  Stream<List<ReservationModel>> getCustomerReservations() {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
       return const Stream.empty();
     }
 
     return _firestore
         .collection("reservations")
-        .where("customerId", isEqualTo: currentUser!.uid)
-        .orderBy("reservedAt", descending: true)
-        .snapshots();
+        .where("customerId", isEqualTo: user.uid)
+        .snapshots()
+        .map(
+          (snapshot) => snapshot.docs
+              .map((doc) => ReservationModel.fromMap(doc.data()))
+              .toList(),
+        );
   }
 
   // ==========================================================
-  // PROVIDER RESERVATIONS
+  // CANCEL RESERVATION
   // ==========================================================
 
-  Stream<QuerySnapshot> getProviderReservations() {
-    if (currentUser == null) {
-      return const Stream.empty();
+  Future<String> cancelReservation(String reservationId) async {
+    try {
+      DocumentSnapshot reservationDoc = await _firestore
+          .collection("reservations")
+          .doc(reservationId)
+          .get();
+
+      if (!reservationDoc.exists) {
+        return "Reservation not found";
+      }
+
+      final data = reservationDoc.data() as Map<String, dynamic>;
+      String foodId = data["foodId"];
+      int reservedQuantity = data["quantity"];
+
+      DocumentReference foodRef = _firestore
+          .collection("food_listings")
+          .doc(foodId);
+
+      await _firestore.runTransaction((transaction) async {
+        DocumentSnapshot foodSnapshot = await transaction.get(foodRef);
+
+        if (foodSnapshot.exists) {
+          final foodData = foodSnapshot.data() as Map<String, dynamic>;
+          int currentQuantity = foodData["quantity"] ?? 0;
+
+          transaction.update(foodRef, {
+            "quantity": currentQuantity + reservedQuantity,
+          });
+        }
+
+        transaction.delete(
+          _firestore.collection("reservations").doc(reservationId),
+        );
+      });
+
+      return "Reservation Cancelled Successfully";
+    } catch (e) {
+      return e.toString();
+    }
+  }
+
+  // ==========================================================
+  // GET PROVIDER RESERVATIONS (SAFE & STREAMING)
+  // ==========================================================
+  Stream<List<ReservationModel>> getProviderReservations() {
+    final user = _auth.currentUser;
+    if (user == null) {
+      return Stream.value([]);
     }
 
     return _firestore
         .collection("reservations")
-        .where("providerId", isEqualTo: currentUser!.uid)
-        .orderBy("reservedAt", descending: true)
-        .snapshots();
+        .where("providerId", isEqualTo: user.uid)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            return ReservationModel.fromMap(doc.data());
+          }).toList();
+        });
   }
 
   // ==========================================================
-  // COMPLETE ORDER (✅ FIXED - Using Timestamp)
+  // COMPLETE ORDER
   // ==========================================================
 
   Future<String> completeOrder(String reservationId) async {
     try {
       await _firestore.collection("reservations").doc(reservationId).update({
         "status": "Completed",
-        "completedAt": Timestamp.now(), // ✅ Use Timestamp.now()
+        "completedAt": Timestamp.now(),
       });
       return "success";
     } catch (e) {
@@ -280,14 +526,14 @@ class FirestoreService {
   }
 
   // ==========================================================
-  // CANCEL ORDER (✅ FIXED - Using Timestamp)
+  // CANCEL ORDER
   // ==========================================================
 
   Future<String> cancelOrder(String reservationId) async {
     try {
       await _firestore.collection("reservations").doc(reservationId).update({
         "status": "Cancelled",
-        "cancelledAt": Timestamp.now(), // ✅ Use Timestamp.now()
+        "cancelledAt": Timestamp.now(),
       });
       return "success";
     } catch (e) {
@@ -390,7 +636,7 @@ class FirestoreService {
   }
 
   // ==========================================================
-  // NOTIFY CUSTOMER — ORDER STATUS UPDATE
+  // NOTIFY CUSTOMER — ORDER STATUS UPDATE (✅ RESTORED BACK)
   // ==========================================================
   Future<void> notifyCustomerOrderStatus({
     required String customerId,
@@ -400,16 +646,16 @@ class FirestoreService {
     String message;
     switch (status) {
       case "Accepted":
-        message = 'Your order for "$foodName" has been accepted!';
+        message = 'Your order for "$foodName" has been accepted! ✅';
         break;
       case "Ready":
-        message = '"$foodName" is ready for pickup!';
+        message = '"$foodName" is ready for pickup! 🎉';
         break;
       case "Completed":
-        message = 'Your order for "$foodName" is complete. Enjoy!';
+        message = 'Your order for "$foodName" is complete. Enjoy! 😊';
         break;
       case "Cancelled":
-        message = 'Your order for "$foodName" was cancelled.';
+        message = 'Your order for "$foodName" was cancelled. ❌';
         break;
       default:
         message = 'Your order for "$foodName" was updated to $status.';
@@ -423,6 +669,108 @@ class FirestoreService {
       'createdAt': FieldValue.serverTimestamp(),
       'readBy': <String>[],
     });
+  }
+
+  // ==========================================================
+  // MARK ALL NOTIFICATIONS AS READ
+  // ==========================================================
+  Future<void> markAllNotificationsAsRead() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+
+    final snapshot = await _firestore
+        .collection("notifications")
+        .where("targetUserId", isEqualTo: user.uid)
+        .get();
+
+    for (var doc in snapshot.docs) {
+      List<dynamic> readBy = doc["readBy"] ?? [];
+
+      if (!readBy.contains(user.uid)) {
+        readBy.add(user.uid);
+
+        await doc.reference.update({"readBy": readBy});
+      }
+    }
+  }
+
+  // ==========================================================
+  // SAVED FOODS (WISHLIST MODULE) — ✅ NEW FEAT WITHOUT BREAKING OLD CODE
+  // ==========================================================
+  Stream<bool> isFoodSaved(String foodId) {
+    final user = _auth.currentUser;
+    if (user == null) return Stream.value(false);
+
+    return _firestore
+        .collection("saved_foods")
+        .where("customerId", isEqualTo: user.uid)
+        .where("foodId", isEqualTo: foodId)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.isNotEmpty);
+  }
+
+  Future<String> toggleSavedFood({
+    required String foodId,
+    required bool isCurrentlySaved,
+  }) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return "Please login first";
+
+      final querySnapshot = await _firestore
+          .collection("saved_foods")
+          .where("customerId", isEqualTo: user.uid)
+          .where("foodId", isEqualTo: foodId)
+          .get();
+
+      if (isCurrentlySaved && querySnapshot.docs.isNotEmpty) {
+        for (var doc in querySnapshot.docs) {
+          await doc.reference.delete();
+        }
+        return "Removed from Saved Items";
+      } else if (!isCurrentlySaved && querySnapshot.docs.isEmpty) {
+        await _firestore.collection("saved_foods").add({
+          "customerId": user.uid,
+          "foodId": foodId,
+          "savedAt": FieldValue.serverTimestamp(),
+        });
+        return "Added to Saved Items";
+      }
+      return "No changes made";
+    } catch (e) {
+      return "Error: ${e.toString()}";
+    }
+  }
+
+  Stream<List<FoodModel>> getSavedFood() {
+    final user = _auth.currentUser;
+    if (user == null) return Stream.value([]);
+
+    return _firestore
+        .collection("saved_foods")
+        .where("customerId", isEqualTo: user.uid)
+        .snapshots()
+        .asyncMap((savedSnapshot) async {
+          List<String> foodIds = savedSnapshot.docs
+              .map((doc) => doc["foodId"] as String)
+              .toList();
+
+          if (foodIds.isEmpty) return <FoodModel>[];
+
+          try {
+            final foodsSnapshot = await _firestore
+                .collection("food_listings")
+                .where(FieldPath.documentId, whereIn: foodIds)
+                .get();
+
+            return foodsSnapshot.docs
+                .map((doc) => FoodModel.fromMap(doc.data()))
+                .toList();
+          } catch (e) {
+            print("Error fetching saved foods details: $e");
+            return <FoodModel>[];
+          }
+        });
   }
 
   Future<void> claimDonation({
