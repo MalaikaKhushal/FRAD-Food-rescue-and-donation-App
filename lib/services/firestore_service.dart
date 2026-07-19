@@ -13,7 +13,7 @@ class FirestoreService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   // ==========================================================
-  // ORIGINAL NOTIFICATION METHODS
+  // ORIGINAL & UPDATED NOTIFICATION METHODS
   // ==========================================================
 
   /// Call this whenever a provider successfully adds a new food listing.
@@ -22,7 +22,7 @@ class FirestoreService {
     required String providerName,
     required String location,
   }) async {
-    await FirebaseFirestore.instance.collection('notifications').add({
+    await _firestore.collection('notifications').add({
       'title': 'New Food Available!',
       'message': '$providerName just posted "$foodName" near $location',
       'targetRole': 'receiver', // only customers/receivers should see this
@@ -32,26 +32,47 @@ class FirestoreService {
   }
 
   /// Stream of notifications relevant to the current logged-in user's role.
-  Stream<QuerySnapshot> getNotificationsForRole(String role) {
-    return FirebaseFirestore.instance
+  Stream<List<NotificationModel>> getNotificationsForRole(String role) {
+    final user = _auth.currentUser;
+    if (user == null) return Stream.value([]);
+
+    var query = _firestore
         .collection('notifications')
-        .where('targetRole', isEqualTo: role)
-        .orderBy('createdAt', descending: true)
-        .limit(30)
-        .snapshots();
+        .where('targetRole', isEqualTo: role);
+
+    // Agar provider hai toh sirf uski apni specific reservations notifications dikhao
+    if (role == 'provider') {
+      query = query.where('targetUserId', isEqualTo: user.uid);
+    }
+
+    return query.snapshots().map((snapshot) {
+      return snapshot.docs
+          .map((doc) => NotificationModel.fromMap(doc.data(), docId: doc.id))
+          .toList();
+    });
   }
 
   /// Marks a notification as read by the current user (so the badge count drops).
   Future<void> markNotificationRead(String notificationId) async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
+    final uid = _auth.currentUser?.uid;
     if (uid == null) return;
 
-    await FirebaseFirestore.instance
-        .collection('notifications')
-        .doc(notificationId)
-        .update({
+    try {
+      await _firestore.collection('notifications').doc(notificationId).update({
+        'readBy': FieldValue.arrayUnion([uid]),
+      });
+    } catch (e) {
+      final querySnapshot = await _firestore
+          .collection('notifications')
+          .where('notificationId', isEqualTo: notificationId)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        await querySnapshot.docs.first.reference.update({
           'readBy': FieldValue.arrayUnion([uid]),
         });
+      }
+    }
   }
 
   // ==========================================================
@@ -242,10 +263,7 @@ class FirestoreService {
 
   Stream<List<NotificationModel>> getCustomerNotifications() {
     final user = _auth.currentUser;
-
-    if (user == null) {
-      return Stream.value([]);
-    }
+    if (user == null) return Stream.value([]);
 
     return _firestore
         .collection("notifications")
@@ -253,7 +271,9 @@ class FirestoreService {
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
-              .map((doc) => NotificationModel.fromMap(doc.data()))
+              .map(
+                (doc) => NotificationModel.fromMap(doc.data(), docId: doc.id),
+              )
               .toList();
         });
   }
@@ -262,31 +282,30 @@ class FirestoreService {
   // UNREAD COUNT
   // ==========================================================
 
-  Stream<int> getUnreadNotificationCount() {
+  Stream<int> getUnreadNotificationCount(String role) {
     final user = _auth.currentUser;
+    if (user == null) return Stream.value(0);
 
-    if (user == null) {
-      return Stream.value(0);
+    var query = _firestore
+        .collection("notifications")
+        .where("targetRole", isEqualTo: role);
+
+    if (role == 'provider') {
+      query = query.where('targetUserId', isEqualTo: user.uid);
     }
 
-    return _firestore
-        .collection("notifications")
-        .where("targetRole", isEqualTo: "receiver")
-        .snapshots()
-        .map((snapshot) {
-          int unread = 0;
+    return query.snapshots().map((snapshot) {
+      int unread = 0;
+      for (var doc in snapshot.docs) {
+        final data = doc.data();
+        final List<dynamic> readBy = data["readBy"] ?? [];
 
-          for (var doc in snapshot.docs) {
-            final data = doc.data();
-            final List<dynamic> readBy = data["readBy"] ?? [];
-
-            if (!readBy.contains(user.uid)) {
-              unread++;
-            }
-          }
-
-          return unread;
-        });
+        if (!readBy.contains(user.uid)) {
+          unread++;
+        }
+      }
+      return unread;
+    });
   }
 
   // ==========================================================
@@ -295,10 +314,7 @@ class FirestoreService {
 
   Stream<List<ReservationModel>> getCustomerOrders() {
     final user = _auth.currentUser;
-
-    if (user == null) {
-      return Stream.value([]);
-    }
+    if (user == null) return Stream.value([]);
 
     return _firestore
         .collection("reservations")
@@ -321,6 +337,7 @@ class FirestoreService {
     String status,
   ) async {
     try {
+      if (reservationId.isEmpty) return "Invalid ID";
       await _firestore.collection("reservations").doc(reservationId).update({
         "status": status,
         "updatedAt": Timestamp.now(),
@@ -341,12 +358,9 @@ class FirestoreService {
     required String quantity,
   }) async {
     try {
-      String message;
-      if (quantity == "1") {
-        message = '$customerName reserved your "$foodName". 🍔';
-      } else {
-        message = '$customerName reserved $quantity of your "$foodName". 🍔';
-      }
+      String message = quantity == "1"
+          ? '$customerName reserved your "$foodName". 🍔'
+          : '$customerName reserved $quantity of your "$foodName". 🍔';
 
       DocumentReference docRef = _firestore.collection('notifications').doc();
 
@@ -373,9 +387,7 @@ class FirestoreService {
   Future<String> reserveFood({required FoodModel food}) async {
     try {
       final user = _auth.currentUser;
-      if (user == null) {
-        return "Please login first";
-      }
+      if (user == null) return "Please login first";
 
       final customerDoc = await _firestore
           .collection("users")
@@ -386,7 +398,6 @@ class FirestoreService {
       DocumentReference reservationRef = _firestore
           .collection("reservations")
           .doc();
-
       double finalPrice = food.donation ? 0.0 : food.discountPrice;
 
       await reservationRef.set({
@@ -424,11 +435,8 @@ class FirestoreService {
   // ==========================================================
 
   Stream<List<ReservationModel>> getCustomerReservations() {
-    final user = FirebaseAuth.instance.currentUser;
-
-    if (user == null) {
-      return const Stream.empty();
-    }
+    final user = _auth.currentUser;
+    if (user == null) return const Stream.empty();
 
     return _firestore
         .collection("reservations")
@@ -452,9 +460,7 @@ class FirestoreService {
           .doc(reservationId)
           .get();
 
-      if (!reservationDoc.exists) {
-        return "Reservation not found";
-      }
+      if (!reservationDoc.exists) return "Reservation not found";
 
       final data = reservationDoc.data() as Map<String, dynamic>;
       String foodId = data["foodId"];
@@ -475,7 +481,6 @@ class FirestoreService {
             "quantity": currentQuantity + reservedQuantity,
           });
         }
-
         transaction.delete(
           _firestore.collection("reservations").doc(reservationId),
         );
@@ -488,22 +493,47 @@ class FirestoreService {
   }
 
   // ==========================================================
-  // GET PROVIDER RESERVATIONS (SAFE & STREAMING)
+  // GET PROVIDER RESERVATIONS (PRIORITY HIGHLIGHT FUNCTIONAL)
   // ==========================================================
-  Stream<List<ReservationModel>> getProviderReservations() {
+  Stream<List<ReservationModel>> getProviderReservations({
+    String? priorityReservationId,
+  }) {
     final user = _auth.currentUser;
-    if (user == null) {
-      return Stream.value([]);
-    }
+    if (user == null) return Stream.value([]);
 
     return _firestore
         .collection("reservations")
         .where("providerId", isEqualTo: user.uid)
         .snapshots()
         .map((snapshot) {
-          return snapshot.docs.map((doc) {
-            return ReservationModel.fromMap(doc.data());
-          }).toList();
+          try {
+            List<ReservationModel> items = [];
+            for (var doc in snapshot.docs) {
+              final data = doc.data();
+              data["reservationId"] = doc.id;
+              items.add(ReservationModel.fromMap(data));
+            }
+
+            // High-End Intelligent Client Sorting
+            items.sort((a, b) {
+              // 1. Agar ye notification se khulne wala main card hai, to top priority do
+              if (priorityReservationId != null &&
+                  priorityReservationId.isNotEmpty) {
+                if (a.reservationId == priorityReservationId) return -1;
+                if (b.reservationId == priorityReservationId) return 1;
+              }
+              // 2. Default: Naye orders upar dikhao (Descending)
+              if (a.createdAt == null && b.createdAt == null) return 0;
+              if (a.createdAt == null) return 1;
+              if (b.createdAt == null) return -1;
+              return b.createdAt.compareTo(a.createdAt);
+            });
+
+            return items;
+          } catch (e) {
+            print("Error parsing reservations: $e");
+            return [];
+          }
         });
   }
 
@@ -544,10 +574,7 @@ class FirestoreService {
   // ==========================================================
 
   Stream<int> getTotalListings() {
-    if (currentUser == null) {
-      return Stream.value(0);
-    }
-
+    if (currentUser == null) return Stream.value(0);
     return _firestore
         .collection("food_listings")
         .where("providerId", isEqualTo: currentUser!.uid)
@@ -560,10 +587,7 @@ class FirestoreService {
   // ==========================================================
 
   Stream<int> getTotalReservations() {
-    if (currentUser == null) {
-      return Stream.value(0);
-    }
-
+    if (currentUser == null) return Stream.value(0);
     return _firestore
         .collection("reservations")
         .where("providerId", isEqualTo: currentUser!.uid)
@@ -576,10 +600,7 @@ class FirestoreService {
   // ==========================================================
 
   Stream<int> getTotalDonations() {
-    if (currentUser == null) {
-      return Stream.value(0);
-    }
-
+    if (currentUser == null) return Stream.value(0);
     return _firestore
         .collection("food_listings")
         .where("providerId", isEqualTo: currentUser!.uid)
@@ -598,7 +619,6 @@ class FirestoreService {
           .collection("food_listings")
           .doc(foodId)
           .get();
-
       if (doc.exists) {
         return FoodModel.fromMap(doc.data() as Map<String, dynamic>);
       }
@@ -672,18 +692,22 @@ class FirestoreService {
   // ==========================================================
   // MARK ALL NOTIFICATIONS AS READ
   // ==========================================================
-  Future<void> markAllNotificationsAsRead() async {
+  Future<void> markAllNotificationsAsRead(String role) async {
     final user = _auth.currentUser;
     if (user == null) return;
 
-    final snapshot = await _firestore
+    var query = _firestore
         .collection("notifications")
-        .where("targetUserId", isEqualTo: user.uid)
-        .get();
+        .where("targetRole", isEqualTo: role);
+
+    if (role == 'provider') {
+      query = query.where('targetUserId', isEqualTo: user.uid);
+    }
+
+    final snapshot = await query.get();
 
     for (var doc in snapshot.docs) {
       List<dynamic> readBy = doc["readBy"] ?? [];
-
       if (!readBy.contains(user.uid)) {
         readBy.add(user.uid);
         await doc.reference.update({"readBy": readBy});
@@ -770,10 +794,6 @@ class FirestoreService {
         });
   }
 
-  // ==========================================================
-  // CUSTOMER DASHBOARD PROFILE COUNTERS
-  // ==========================================================
-
   Stream<int> getSavedFoodCount() {
     final user = _auth.currentUser;
     if (user == null) return Stream.value(0);
@@ -803,12 +823,9 @@ class FirestoreService {
     required String foodId,
     required String providerId,
   }) async {
-    String id = FirebaseFirestore.instance
-        .collection("donation_claims")
-        .doc()
-        .id;
+    String id = _firestore.collection("donation_claims").doc().id;
 
-    await FirebaseFirestore.instance.collection("donation_claims").doc(id).set({
+    await _firestore.collection("donation_claims").doc(id).set({
       "claimId": id,
       "foodId": foodId,
       "providerId": providerId,
@@ -817,9 +834,8 @@ class FirestoreService {
       "createdAt": Timestamp.now(),
     });
 
-    await FirebaseFirestore.instance
-        .collection("food_listings")
-        .doc(foodId)
-        .update({"status": "Claimed"});
+    await _firestore.collection("food_listings").doc(foodId).update({
+      "status": "Claimed",
+    });
   }
 }

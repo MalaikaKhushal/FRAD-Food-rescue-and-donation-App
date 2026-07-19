@@ -4,7 +4,9 @@ import '../models/reservation_model.dart';
 import '../services/firestore_service.dart';
 
 class ReservationsScreen extends StatefulWidget {
-  const ReservationsScreen({super.key});
+  final String? priorityReservationId; // Added priority handling parameter
+
+  const ReservationsScreen({super.key, this.priorityReservationId});
 
   @override
   State<ReservationsScreen> createState() => _ReservationsScreenState();
@@ -28,6 +30,16 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
     {"label": "Completed", "icon": Icons.done_all_rounded},
     {"label": "Cancelled", "icon": Icons.cancel_outlined},
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    // If opened via notification click, force reset status tab to 'All' to ensure visibility
+    if (widget.priorityReservationId != null &&
+        widget.priorityReservationId!.isNotEmpty) {
+      selectedStatus = "All";
+    }
+  }
 
   @override
   void dispose() {
@@ -270,7 +282,9 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
 
   Widget _buildReservationsList() {
     return StreamBuilder<List<ReservationModel>>(
-      stream: firestoreService.getProviderReservations(),
+      stream: firestoreService.getProviderReservations(
+        priorityReservationId: widget.priorityReservationId,
+      ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -307,7 +321,10 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
           itemCount: list.length,
           itemBuilder: (context, index) {
-            return _buildReservationCard(list[index]);
+            final item = list[index];
+            final isHighlighted =
+                widget.priorityReservationId == item.reservationId;
+            return _buildReservationCard(item, isHighlighted: isHighlighted);
           },
         );
       },
@@ -346,7 +363,10 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
     );
   }
 
-  Widget _buildReservationCard(ReservationModel reservation) {
+  Widget _buildReservationCard(
+    ReservationModel reservation, {
+    bool isHighlighted = false,
+  }) {
     final color = _statusColor(reservation.status);
 
     return Container(
@@ -354,9 +374,14 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
+        border: isHighlighted
+            ? Border.all(color: primary, width: 2)
+            : null, // Priority Visual Border
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: isHighlighted
+                ? primary.withOpacity(0.15)
+                : Colors.black.withOpacity(0.05),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -367,6 +392,24 @@ class _ReservationsScreenState extends State<ReservationsScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (isHighlighted) ...[
+              const Row(
+                children: [
+                  Icon(Icons.star_rounded, color: primary, size: 16),
+                  SizedBox(width: 4),
+                  Text(
+                    "NEW NOTIFICATION ORDER",
+                    style: TextStyle(
+                      color: primary,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 11,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+            ],
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

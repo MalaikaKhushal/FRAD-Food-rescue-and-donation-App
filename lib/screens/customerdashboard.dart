@@ -145,7 +145,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
         ),
         actions: [
           StreamBuilder<int>(
-            stream: firestoreService.getUnreadNotificationCount(),
+            stream: firestoreService.getUnreadNotificationCount(_auth.currentUser?.uid ?? ''),
             builder: (context, snapshot) {
               final count = snapshot.data ?? 0;
 
