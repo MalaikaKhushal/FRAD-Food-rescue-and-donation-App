@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:frad/screens/food_detail_screen.dart';
+import 'dart:convert'; // ✅ FIXED: Base64 decoding ke liye import add kiya
 
 import '../models/food_model.dart';
 import '../models/user_model.dart';
@@ -191,13 +192,29 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
             },
           ),
           PopupMenuButton<String>(
-            icon: const CircleAvatar(
+            // ✅ FIXED: CircleAvatar updated to show uploaded Base64 profile photo dynamically
+            icon: CircleAvatar(
               radius: 18,
               backgroundColor: Colors.white,
-              child: Icon(Icons.person, color: Color(0xffF57C00)),
+              backgroundImage:
+                  currentUser?.imageUrl != null &&
+                      currentUser!.imageUrl.isNotEmpty
+                  ? Image.memory(
+                      base64Decode(currentUser!.imageUrl.split(',').last),
+                    ).image
+                  : null,
+              child:
+                  currentUser?.imageUrl == null || currentUser!.imageUrl.isEmpty
+                  ? const Icon(Icons.person, color: Color(0xffF57C00))
+                  : null,
             ),
             onSelected: (value) {
-              if (value == "logout") {
+              if (value == "profile") {
+                Navigator.pushNamed(
+                  context,
+                  "/profile",
+                ).then((_) => loadUser()); // Data refresh on back
+              } else if (value == "logout") {
                 logout();
               }
             },
@@ -217,11 +234,21 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
               ),
               const PopupMenuDivider(),
               const PopupMenuItem(
+                value: "profile",
+                child: Row(
+                  children: [
+                    Icon(Icons.account_circle_outlined, color: Colors.black87),
+                    const SizedBox(width: 10),
+                    Text("My Profile"),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
                 value: "logout",
                 child: Row(
                   children: [
-                    Icon(Icons.logout),
-                    SizedBox(width: 10),
+                    Icon(Icons.logout, color: Colors.red),
+                    const SizedBox(width: 10),
                     Text("Logout"),
                   ],
                 ),
@@ -693,7 +720,6 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                     ],
                   ),
                 ),
-                // ✅ FIXED: Separated alignment and cleanly structure components
                 StreamBuilder<bool>(
                   stream: firestoreService.isFoodSaved(food.foodId),
                   builder: (context, snapshot) {
@@ -814,13 +840,13 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
           case 0:
             break;
           case 1:
-            Navigator.pushNamed(context, "/savedFood");
+            Navigator.pushNamed(context, "/savedFood").then((_) => loadUser());
             break;
           case 2:
-            Navigator.pushNamed(context, "/orders");
+            Navigator.pushNamed(context, "/orders").then((_) => loadUser());
             break;
           case 3:
-            Navigator.pushNamed(context, "/profile");
+            Navigator.pushNamed(context, "/profile").then((_) => loadUser());
             break;
         }
       },

@@ -20,7 +20,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
   }
 
   final FirestoreService firestoreService = FirestoreService();
-
   final Color primaryColor = const Color(0xffF57C00);
 
   @override
@@ -29,23 +28,21 @@ class _NotificationScreenState extends State<NotificationScreen> {
 
     return Scaffold(
       backgroundColor: const Color(0xffF6F7FB),
-
       appBar: AppBar(
         elevation: 0,
-
         backgroundColor: primaryColor,
-
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text(
           "Notifications",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
-
         centerTitle: true,
       ),
-
       body: StreamBuilder<List<NotificationModel>>(
         stream: firestoreService.getCustomerNotifications(),
-
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(child: CircularProgressIndicator());
@@ -64,19 +61,19 @@ class _NotificationScreenState extends State<NotificationScreen> {
             );
           }
 
+          // ✅ FIX: Notifications ko yahan screen par latest ke mutabik sort kar rahe hain
+          // Is se Firestore index ki zaroorat nahi paregi aur error 100% gayab ho jayegi!
           final notifications = snapshot.data!;
+          notifications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
           return ListView.builder(
             padding: EdgeInsets.symmetric(
               horizontal: width * .04,
               vertical: 18,
             ),
-
             itemCount: notifications.length,
-
             itemBuilder: (context, index) {
               final notification = notifications[index];
-
               return notificationCard(notification);
             },
           );
@@ -104,18 +101,15 @@ class _NotificationScreenState extends State<NotificationScreen> {
           horizontal: 18,
           vertical: 12,
         ),
-
         leading: CircleAvatar(
           radius: 24,
           backgroundColor: primaryColor.withOpacity(.12),
           child: Icon(Icons.notifications_active_rounded, color: primaryColor),
         ),
-
         title: Text(
           notification.title,
           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         ),
-
         subtitle: Padding(
           padding: const EdgeInsets.only(top: 8),
           child: Column(
@@ -125,9 +119,7 @@ class _NotificationScreenState extends State<NotificationScreen> {
                 notification.message,
                 style: const TextStyle(color: Colors.black87),
               ),
-
               const SizedBox(height: 10),
-
               Text(
                 notification.createdAt.toDate().toString(),
                 style: const TextStyle(color: Colors.grey, fontSize: 12),
@@ -135,7 +127,6 @@ class _NotificationScreenState extends State<NotificationScreen> {
             ],
           ),
         ),
-
         trailing: notification.readBy.isEmpty
             ? Container(
                 width: 12,

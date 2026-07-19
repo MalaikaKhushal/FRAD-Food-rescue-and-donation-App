@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:frad/screens/saved_food_screen.dart';
-
 import 'firebase_options.dart';
 
+// Models
 import 'models/food_model.dart';
 
+// Screens
 import 'screens/splashscreen.dart';
 import 'screens/landingpage.dart';
 import 'screens/loginscreen.dart';
@@ -19,12 +19,11 @@ import 'screens/orders_screen.dart';
 import 'screens/reservations_screen.dart';
 import 'screens/notification_screen.dart';
 import 'screens/saved_food_screen.dart';
+import 'screens/customer_profile_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
   runApp(const FRADApp());
 }
 
@@ -36,58 +35,47 @@ class FRADApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: "FRAD",
-
       initialRoute: '/',
-
       routes: {
+        // --- Authentication & Welcome ---
         '/': (context) => const SplashScreen(),
-
         '/landing': (context) => const LandingPage(),
-
         '/signin': (context) => const LoginScreen(),
-
         '/createaccount': (context) => const SignupScreen(),
 
+        // --- Dashboards ---
         '/customer': (context) => const CustomerDashboard(),
-
         '/provider': (context) => const ProviderDashboard(name: "", role: ""),
 
+        // --- Customer Features ---
+        '/profile': (context) => const CustomerProfileScreen(),
         '/orders': (context) => const OrdersScreen(),
+        '/savedFood': (context) => const SavedFoodScreen(),
+        '/notifications': (context) => const NotificationScreen(),
 
+        // --- Provider Features ---
+        '/myListings': (context) => const MyListingsScreen(),
+        '/addFood': (context) => const AddFoodScreen(),
         '/Reservations': (context) => const ReservationsScreen(),
-
         '/providerReservations': (context) => const ReservationsScreen(),
 
-        '/myListings': (context) => const MyListingsScreen(),
-
-        '/addFood': (context) => const AddFoodScreen(),
-        "/notifications": (context) => const NotificationScreen(),
-        '/savedFood': (context) => const SavedFoodScreen(),
-        // -----------------------------
-        // Food Details
-        // -----------------------------
+        // --- Dynamic Food Details ---
         '/foodDetails': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
-
           if (args is FoodModel) {
             return FoodDetailScreen(food: args);
           }
-
           return const Scaffold(
             body: Center(child: Text("Food data not found!")),
           );
         },
 
-        // -----------------------------
-        // Edit Food
-        // -----------------------------
+        // --- Dynamic Edit Food ---
         '/editFood': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
-
           if (args is FoodModel) {
             return AddFoodScreen(food: args);
           }
-
           return const AddFoodScreen();
         },
       },

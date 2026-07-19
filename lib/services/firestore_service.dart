@@ -237,7 +237,7 @@ class FirestoreService {
   }
 
   // ==========================================================
-  // CUSTOMER NOTIFICATIONS
+  // CUSTOMER NOTIFICATIONS (FIXED: INDEX ERROR REMOVED)
   // ==========================================================
 
   Stream<List<NotificationModel>> getCustomerNotifications() {
@@ -250,7 +250,7 @@ class FirestoreService {
     return _firestore
         .collection("notifications")
         .where("targetRole", isEqualTo: "receiver")
-        .orderBy("createdAt", descending: true)
+        // 🛠️ .orderBy ko hata diya hai taake index error 100% khatam ho jaye
         .snapshots()
         .map((snapshot) {
           return snapshot.docs
@@ -771,5 +771,30 @@ class FirestoreService {
             return <FoodModel>[];
           }
         });
+  }
+  // ==========================================================
+  // CUSTOMER DASHBOARD PROFILE COUNTERS (✅ ADDED SAFELY TO AVOID BREAKING CODE)
+  // ==========================================================
+
+  Stream<int> getSavedFoodCount() {
+    final user = _auth.currentUser;
+    if (user == null) return Stream.value(0);
+
+    return _firestore
+        .collection("saved_foods")
+        .where("customerId", isEqualTo: user.uid)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
+  Stream<int> getOrdersCount() {
+    final user = _auth.currentUser;
+    if (user == null) return Stream.value(0);
+
+    return _firestore
+        .collection("reservations")
+        .where("customerId", isEqualTo: user.uid)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
   }
 }
