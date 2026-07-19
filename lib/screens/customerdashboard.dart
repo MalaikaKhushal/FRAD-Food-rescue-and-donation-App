@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:frad/screens/food_detail_screen.dart';
-import 'dart:convert'; // ✅ FIXED: Base64 decoding ke liye import add kiya
+import 'package:frad/screens/nearby_foods_screen.dart'; 
+import 'dart:convert'; 
 
 import '../models/food_model.dart';
 import '../models/user_model.dart';
@@ -145,7 +146,9 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
         ),
         actions: [
           StreamBuilder<int>(
-            stream: firestoreService.getUnreadNotificationCount(),
+            stream: firestoreService.getUnreadNotificationCount(
+              _auth.currentUser?.uid ?? '',
+            ),
             builder: (context, snapshot) {
               final count = snapshot.data ?? 0;
 
@@ -192,7 +195,6 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
             },
           ),
           PopupMenuButton<String>(
-            // ✅ FIXED: CircleAvatar updated to show uploaded Base64 profile photo dynamically
             icon: CircleAvatar(
               radius: 18,
               backgroundColor: Colors.white,
@@ -213,7 +215,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                 Navigator.pushNamed(
                   context,
                   "/profile",
-                ).then((_) => loadUser()); // Data refresh on back
+                ).then((_) => loadUser()); 
               } else if (value == "logout") {
                 logout();
               }
@@ -265,7 +267,12 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
       ),
       floatingActionButton: FloatingActionButton(
         backgroundColor: primaryColor,
-        onPressed: () {},
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const NearbyFoodsScreen()),
+          );
+        },
         child: const Icon(Icons.location_on, color: Colors.white),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
@@ -348,7 +355,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                 }
               },
               decoration: InputDecoration(
-                hintText: "Search Food...",
+                hintText: "Search Food or City...", // ✅ UPDATED HINT
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: searchText.isNotEmpty
                     ? IconButton(
@@ -491,9 +498,11 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                 bool matchesCategory =
                     selectedCategory == "All" ||
                     food.providerType == selectedCategory;
-                bool matchesSearch = food.foodName.toLowerCase().contains(
-                  searchText,
-                );
+                
+                // ✅ UPDATED: Added location check here too
+                bool matchesSearch = food.foodName.toLowerCase().contains(searchText) || 
+                                     food.location.toLowerCase().contains(searchText);
+                
                 return matchesCategory && matchesSearch;
               }).toList();
 
@@ -527,7 +536,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
               }
             },
             decoration: InputDecoration(
-              hintText: "Search Food...",
+              hintText: "Search Food or City...", // ✅ UPDATED HINT
               prefixIcon: const Icon(Icons.search),
               suffixIcon: IconButton(
                 icon: const Icon(Icons.close),
@@ -563,9 +572,14 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                 return _buildNoResultsFound();
               }
               List<FoodModel> foods = snapshot.data!;
+              
+              // ✅ FIXED: Filter now checks foodName, providerName, AND food.location
               List<FoodModel> searchResults = foods.where((food) {
-                return food.foodName.toLowerCase().contains(searchText) ||
-                    food.providerName.toLowerCase().contains(searchText);
+                final nameMatch = food.foodName.toLowerCase().contains(searchText);
+                final providerMatch = food.providerName.toLowerCase().contains(searchText);
+                final locationMatch = food.location.toLowerCase().contains(searchText); 
+                
+                return nameMatch || providerMatch || locationMatch;
               }).toList();
 
               if (searchResults.isEmpty) return _buildNoResultsFound();

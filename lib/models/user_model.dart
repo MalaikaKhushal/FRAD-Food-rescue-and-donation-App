@@ -7,8 +7,9 @@ class UserModel {
   final String phone;
   final String role;
   final String? profileImage;
-  // ✅ Profile screen ke liye missing fields add kar di hain
   final String? address;
+  // ✅ FIXED: City field add ki taake Nearby Foods screen par error khatam ho jaye
+  final String? city;
   final dynamic createdAt;
 
   UserModel({
@@ -19,11 +20,15 @@ class UserModel {
     required this.role,
     this.profileImage,
     this.address,
+    this.city, // ✅ Included in constructor
     this.createdAt,
   });
 
-  // ✅ Profile screen 'imageUrl' dhund rahi hai, toh humne getter bana diya taake purana 'profileImage' bhi kaam kare aur error bhi na aaye
+  // Profile screen 'imageUrl' dhund rahi hai, toh humne getter bana diya taake purana 'profileImage' bhi kaam kare aur error bhi na aaye
   String get imageUrl => profileImage ?? '';
+
+  // ✅ Getter for City so it never returns null and safely gives empty string if not found
+  String get cityValue => city ?? '';
 
   Map<String, dynamic> toMap() {
     return {
@@ -34,6 +39,7 @@ class UserModel {
       'role': role,
       'profileImage': profileImage,
       'address': address,
+      'city': city, // ✅ Map me add kiya
       'createdAt': createdAt,
     };
   }
@@ -49,6 +55,9 @@ class UserModel {
           map['profileImage'] ??
           map['imageUrl'], // Dono names ko handle kar lega safely
       address: map['address'] ?? 'Not Provided',
+      city:
+          map['city'] ??
+          '', // ✅ Firestore se city value read karne ke liye logic add kiya
       createdAt: map['createdAt'],
     );
   }

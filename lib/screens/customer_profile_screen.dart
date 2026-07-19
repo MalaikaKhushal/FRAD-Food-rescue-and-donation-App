@@ -517,7 +517,7 @@ class _CustomerProfileScreenState extends State<CustomerProfileScreen> {
                         _buildStatItem(
                           Icons.notifications,
                           "Alerts",
-                          firestoreService.getUnreadNotificationCount(),
+                          firestoreService.getUnreadNotificationCount(_auth.currentUser!.uid),
                           Colors.blue,
                         ),
                       ],

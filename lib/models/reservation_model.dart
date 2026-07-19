@@ -3,24 +3,17 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class ReservationModel {
   final String reservationId;
   final String foodId;
-
   final String customerId;
   final String customerName;
-
   final String providerId;
   final String providerName;
-
   final String foodName;
   final String imageUrl;
-
   final int quantity;
   final double price;
-
   final String pickupDate;
   final String pickupTime;
-
   final String status;
-
   final Timestamp createdAt;
 
   ReservationModel({
@@ -42,28 +35,22 @@ class ReservationModel {
 
   factory ReservationModel.fromMap(Map<String, dynamic> map) {
     return ReservationModel(
-      reservationId: map["reservationId"] ?? "",
-      foodId: map["foodId"] ?? "",
-
-      customerId: map["customerId"] ?? "",
-      customerName: map["customerName"] ?? "",
-
-      providerId: map["providerId"] ?? "",
-      providerName: map["providerName"] ?? "",
-
-      foodName: map["foodName"] ?? "",
-      imageUrl: map["imageUrl"] ?? "",
-
-      quantity: map["quantity"] ?? 0,
-
-      price: (map["price"] ?? 0).toDouble(),
-
-      pickupDate: map["pickupDate"] ?? "",
-      pickupTime: map["pickupTime"] ?? "",
-
-      status: map["status"] ?? "Pending",
-
-      createdAt: map["createdAt"] ?? Timestamp.now(),
+      reservationId: map["reservationId"]?.toString() ?? "",
+      foodId: map["foodId"]?.toString() ?? "",
+      customerId: map["customerId"]?.toString() ?? "",
+      customerName: map["customerName"]?.toString() ?? "",
+      providerId: map["providerId"]?.toString() ?? "",
+      providerName: map["providerName"]?.toString() ?? "",
+      foodName: map["foodName"]?.toString() ?? "",
+      imageUrl: map["imageUrl"]?.toString() ?? "",
+      quantity: int.tryParse(map["quantity"]?.toString() ?? "0") ?? 0,
+      price: double.tryParse(map["price"]?.toString() ?? "0.0") ?? 0.0,
+      pickupDate: map["pickupDate"]?.toString() ?? "",
+      pickupTime: map["pickupTime"]?.toString() ?? "",
+      status: map["status"]?.toString() ?? "Pending",
+      createdAt: map["createdAt"] is Timestamp
+          ? map["createdAt"]
+          : Timestamp.now(),
     );
   }
 }

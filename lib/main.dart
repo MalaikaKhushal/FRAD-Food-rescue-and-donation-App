@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:frad/screens/donations_screen.dart';
 import 'firebase_options.dart';
 
 // Models
@@ -61,9 +62,7 @@ class FRADApp extends StatelessWidget {
         '/addFood': (context) => const AddFoodScreen(),
         '/Reservations': (context) => const ReservationsScreen(),
         '/providerReservations': (context) => const ReservationsScreen(),
-        '/donations': (context) => const DonationsScreen(),
-        "/providerProfile": (context) => const ProviderProfileScreen(),
-        "/providerQr": (context) => const ProviderQrScreen(),
+
         // --- Dynamic Food Details ---
         '/foodDetails': (context) {
           final args = ModalRoute.of(context)?.settings.arguments;
