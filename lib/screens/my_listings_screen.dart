@@ -62,13 +62,20 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
       ),
       body: Column(
         children: [
-          const SizedBox(height: 15),
+          const SizedBox(height: 20),
+
           buildSearchBar(),
-          const SizedBox(height: 15),
+
+          const SizedBox(height: 20),
+
           buildFilter(),
-          const SizedBox(height: 15),
-          buildAnalyticsHeader(),
-          const SizedBox(height: 15),
+
+          const SizedBox(height: 20),
+
+          buildAnalytics(),
+
+          const SizedBox(height: 20),
+
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -126,14 +133,14 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
 
                     switch (selectedStatus) {
                       case "Active":
-                        return (status == "available" ||
-                                status == "active" ||
-                                status == "pending") &&
-                            !isExpiredByDate;
+                        return status == "available" || status == "active";
+
                       case "Reserved":
-                        return status == "reserved" || status == "claimed";
+                        return status == "reserved";
+
                       case "Expired":
-                        return status == "expired" || isExpiredByDate;
+                        return status == "expired";
+
                       case "Donated":
                         return donation == true;
                       default:
@@ -143,18 +150,41 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                 }
 
                 if (foodList.isEmpty) {
-                  return buildEmptyState();
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+
+                      children: const [
+                        Icon(Icons.fastfood, size: 70, color: Colors.orange),
+
+                        SizedBox(height: 15),
+
+                        Text(
+                          "No Food Found",
+
+                          style: TextStyle(
+                            fontSize: 20,
+
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
                 }
 
                 return GridView.builder(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.all(20),
+
                   itemCount: foodList.length,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: gridCount,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 16,
-                    mainAxisExtent:
-                        380, // Explicit height prevents gaps & overflows
+
+                    crossAxisSpacing: 20,
+
+                    mainAxisSpacing: 20,
+
+                    childAspectRatio: .74,
                   ),
                   itemBuilder: (context, index) {
                     var food = foodList[index];
@@ -175,20 +205,58 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                       child: InkWell(
                         borderRadius: BorderRadius.circular(20),
                         onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ViewFoodDetails(food: food),
-                            ),
-                          );
+                          // Food Details Screen yahan open hogi
                         },
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // 1. Food Image Stack Section
-                            SizedBox(
-                              height: 160,
-                              width: double.infinity,
+                            if (food["donation"] == true)
+                              Positioned(
+                                top: 10,
+                                right: 10,
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 5,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.green,
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  child: const Text(
+                                    "DONATION",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 11,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            Positioned(
+                              bottom: 10,
+                              left: 10,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 6,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
+                                child: Text(
+                                  "${food["discountPrice"]} Rs",
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            // Food Image
+                            Expanded(
+                              flex: 5,
                               child: Stack(
                                 children: [
                                   ClipRRect(
@@ -196,7 +264,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                       top: Radius.circular(20),
                                     ),
                                     child: Image.network(
-                                      foodData["imageUrl"] ?? "",
+                                      food["imageUrl"],
                                       width: double.infinity,
                                       height: 160,
                                       fit: BoxFit.cover,
@@ -214,7 +282,7 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                       },
                                     ),
                                   ),
-                                  // Status Badge
+
                                   Positioned(
                                     top: 10,
                                     left: 10,
@@ -228,80 +296,46 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                         borderRadius: BorderRadius.circular(20),
                                       ),
                                       child: Text(
-                                        (foodData["status"] ?? "Available")
-                                            .toString()
-                                            .toUpperCase(),
+                                        food["status"],
                                         style: const TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
-                                          fontSize: 11,
                                         ),
                                       ),
                                     ),
                                   ),
-                                  // Donation Tag
-                                  if (foodData["donation"] == true)
-                                    Positioned(
-                                      top: 10,
-                                      right: 10,
-                                      child: Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 5,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.green,
-                                          borderRadius: BorderRadius.circular(
-                                            20,
-                                          ),
-                                        ),
-                                        child: const Text(
-                                          "DONATION",
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 11,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
                                 ],
                               ),
                             ),
 
-                            // 2. Details Compact Section (Gap Removed)
                             Expanded(
+                              flex: 4,
                               child: Padding(
                                 padding: const EdgeInsets.all(12),
                                 child: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
+
                                   children: [
-                                    Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          foodData["foodName"] ??
-                                              "Untitled Food",
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: const TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 16,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 2),
-                                        Text(
-                                          foodData["category"] ?? "Other",
-                                          style: const TextStyle(
-                                            color: Colors.grey,
-                                            fontSize: 13,
-                                          ),
-                                        ),
-                                      ],
+                                    Text(
+                                      food["foodName"],
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                      ),
                                     ),
+
+                                    const SizedBox(height: 6),
+
+                                    Text(
+                                      food["category"],
+                                      style: const TextStyle(
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+
+                                    const Spacer(),
 
                                     Row(
                                       children: [
@@ -310,16 +344,14 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                           color: Colors.orange,
                                           size: 16,
                                         ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          "${foodData["quantity"] ?? 0} Left",
-                                          style: const TextStyle(
-                                            fontSize: 13,
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
+
+                                        const SizedBox(width: 5),
+
+                                        Text("${food["quantity"]} Left"),
                                       ],
                                     ),
+
+                                    const SizedBox(height: 6),
 
                                     Text(
                                       foodData["donation"] == true
@@ -333,8 +365,10 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                         fontSize: 16,
                                       ),
                                     ),
+                                    const SizedBox(height: 8),
 
-                                    // Action Buttons Row
+                                    const SizedBox(height: 10),
+
                                     Row(
                                       children: [
                                         Expanded(
@@ -395,19 +429,13 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
                                               ),
                                             ),
                                             onPressed: () {
-                                              _showFoodItemAnalytics(
-                                                context,
-                                                foodData,
-                                              );
+                                              // Analytics Screen yahan open hogi
                                             },
                                             icon: const Icon(
                                               Icons.analytics_outlined,
                                               size: 16,
                                             ),
-                                            label: const Text(
-                                              "Analytics",
-                                              style: TextStyle(fontSize: 12),
-                                            ),
+                                            label: const Text("Analytics"),
                                           ),
                                         ),
                                       ],
@@ -443,10 +471,12 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
         },
         decoration: InputDecoration(
           hintText: "Search Food",
-          prefixIcon: const Icon(Icons.search, color: Colors.grey),
+
+          prefixIcon: const Icon(Icons.search),
+
           filled: true,
           fillColor: Colors.white,
-          contentPadding: const EdgeInsets.symmetric(vertical: 0),
+
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
             borderSide: BorderSide.none,
@@ -459,7 +489,8 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
   // Chips Filter Header Widget
   Widget buildFilter() {
     return SizedBox(
-      height: 40,
+      height: 45,
+
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -467,18 +498,15 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
         itemBuilder: (context, index) {
           bool selected = statusList[index] == selectedStatus;
           return Padding(
-            padding: const EdgeInsets.only(right: 8),
+            padding: const EdgeInsets.only(right: 10),
+
             child: ChoiceChip(
               selected: selected,
-              label: Text(
-                statusList[index],
-                style: TextStyle(
-                  color: selected ? Colors.white : Colors.black87,
-                  fontWeight: selected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
+
+              label: Text(statusList[index]),
+
               selectedColor: Colors.orange,
-              backgroundColor: Colors.white,
+
               onSelected: (value) {
                 setState(() {
                   selectedStatus = statusList[index];
@@ -565,16 +593,23 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
   }
 
   Widget analyticsCard(String value, String title, Color color) {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+
+      padding: const EdgeInsets.all(18),
+
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
+
+        borderRadius: BorderRadius.circular(20),
+
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.withOpacity(.12),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: Colors.grey.withOpacity(.15),
+
+            blurRadius: 12,
+
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -583,36 +618,16 @@ class _MyListingsScreenState extends State<MyListingsScreen> {
           Text(
             value,
             style: TextStyle(
-              fontSize: 24,
+              fontSize: 28,
+
               color: color,
               fontWeight: FontWeight.bold,
             ),
           ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 13,
-              color: Colors.black54,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 
-  Widget buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.fastfood, size: 60, color: Colors.orange),
-          SizedBox(height: 12),
-          Text(
-            "No Food Found",
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
+          const SizedBox(height: 5),
+
+          Text(title),
         ],
       ),
     );

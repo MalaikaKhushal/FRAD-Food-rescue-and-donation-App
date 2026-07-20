@@ -26,16 +26,27 @@ class _ProviderQrScreenState extends State<ProviderQrScreen> {
   }
 
   Future<void> loadQr() async {
-    qrUrl = await firestoreService.getProviderQr();
-    if (mounted) setState(() {});
+    setState(() {
+      loading = true;
+    });
+    try {
+      qrUrl = await firestoreService.getProviderQr();
+    } catch (e) {
+      debugPrint("Error loading QR: $e");
+    } finally {
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
+    }
   }
 
   Future<void> pickImage() async {
     final picker = ImagePicker();
-    Uint8List? selectedImageBytes;
     final XFile? picked = await picker.pickImage(
       source: ImageSource.gallery,
-      imageQuality: 70,
+      imageQuality: 85,
     );
     if (picked == null) return;
 
@@ -47,9 +58,9 @@ class _ProviderQrScreenState extends State<ProviderQrScreen> {
 
   Future<void> uploadQr() async {
     if (imageBytes == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("Select QR Image")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please select a QR image first")),
+      );
       return;
     }
 
@@ -58,21 +69,31 @@ class _ProviderQrScreenState extends State<ProviderQrScreen> {
     });
 
     try {
-      await firestoreService.uploadQrImageBytes(
-        imageBytes!,
-        firestoreService.currentUser!.uid,
-      );
+      // Current user UID verification
+      final userId = firestoreService.currentUser?.uid;
+      if (userId == null) {
+        throw "User not authenticated";
+      }
 
+      await firestoreService.uploadQrImageBytes(imageBytes!, userId);
+
+      // Fetch the newly uploaded URL
       qrUrl = await firestoreService.getProviderQr();
 
       if (!mounted) return;
+
+      // Clear memory bytes so it now renders the uploaded Network image
       setState(() {
+        imageBytes = null;
         loading = false;
       });
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text("QR Uploaded Successfully")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Payment QR Uploaded Successfully!"),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -93,58 +114,78 @@ class _ProviderQrScreenState extends State<ProviderQrScreen> {
       backgroundColor: const Color(0xffF5F6FA),
       appBar: AppBar(
         backgroundColor: Colors.orange,
+        centerTitle: true,
+        elevation: 0,
         title: const Text(
-          "Payment QR",
+          "Payment QR Code",
           style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
         ),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            const SizedBox(height: 20),
-            CircleAvatar(
-              radius: 120,
-              backgroundColor: Colors.grey.shade200,
-              backgroundImage: imageBytes != null
-                  ? MemoryImage(imageBytes!)
-                  : qrUrl.isNotEmpty
-                  ? NetworkImage(qrUrl) as ImageProvider
-                  : null,
-              child: imageBytes == null && qrUrl.isEmpty
-                  ? const Icon(Icons.qr_code, size: 80)
-                  : null,
+            const SizedBox(height: 10),
+
+            // Square Frame for QR Code Display
+            Container(
+              width: 260,
+              height: 260,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: Colors.orange.shade300, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.15),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: buildQrImageWidget(),
+              ),
             ),
+
             const SizedBox(height: 30),
+
+            // Choose Image Button
             SizedBox(
               width: double.infinity,
-              height: 55,
+              height: 52,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.orange,
                   foregroundColor: Colors.white,
+                  elevation: 1,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
                 onPressed: pickImage,
-                icon: const Icon(Icons.photo),
+                icon: const Icon(Icons.photo_library),
                 label: const Text(
                   "Choose QR From Gallery",
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
               ),
             ),
-            const SizedBox(height: 20),
+
+            const SizedBox(height: 15),
+
+            // Upload Button
             SizedBox(
               width: double.infinity,
-              height: 55,
+              height: 52,
               child: ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
+                  elevation: 1,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
                 onPressed: loading ? null : uploadQr,
@@ -159,7 +200,7 @@ class _ProviderQrScreenState extends State<ProviderQrScreen> {
                       )
                     : const Icon(Icons.cloud_upload),
                 label: Text(
-                  loading ? "Uploading..." : "Upload QR",
+                  loading ? "Uploading..." : "Upload QR Code",
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -167,15 +208,75 @@ class _ProviderQrScreenState extends State<ProviderQrScreen> {
                 ),
               ),
             ),
+
             const SizedBox(height: 25),
-            const Text(
-              "Upload your EasyPaisa / JazzCash / Bank QR.\nCustomers will use this QR to make payments.",
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey, fontSize: 15),
+
+            // Info Box
+            Container(
+              padding: const EdgeInsets.all(15),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.orange.shade200),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, color: Colors.orange),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Text(
+                      "Upload EasyPaisa, JazzCash, or Bank QR. Customers will scan this to send payments.",
+                      style: TextStyle(
+                        color: Colors.black87,
+                        fontSize: 13,
+                        height: 1.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  // Widget to display Preview / Existing QR / Placeholder
+  Widget buildQrImageWidget() {
+    if (imageBytes != null) {
+      return Image.memory(
+        imageBytes!,
+        fit: BoxFit.contain, // Shows full QR inside square frame
+      );
+    }
+
+    if (qrUrl.isNotEmpty) {
+      return Image.network(
+        qrUrl,
+        fit: BoxFit.contain,
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return const Center(child: CircularProgressIndicator());
+        },
+        errorBuilder: (_, __, ___) {
+          return const Center(
+            child: Icon(Icons.broken_image, size: 50, color: Colors.grey),
+          );
+        },
+      );
+    }
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(Icons.qr_code_2, size: 80, color: Colors.grey.shade400),
+        const SizedBox(height: 8),
+        Text(
+          "No QR Uploaded",
+          style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+        ),
+      ],
     );
   }
 }
