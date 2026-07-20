@@ -18,11 +18,9 @@ class _LoginScreenState extends State<LoginScreen> {
   final AuthService _authService = AuthService();
 
   bool isLoading = false;
-
   bool hidePassword = true;
 
   final TextEditingController emailController = TextEditingController();
-
   final TextEditingController passwordController = TextEditingController();
 
   bool isPasswordHidden = true;
@@ -35,6 +33,9 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  // ==========================================
+  // LOGIN FUNCTION
+  // ==========================================
   Future<void> login() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) {
@@ -47,7 +48,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
     final result = await _authService.loginUser(
       email: emailController.text.trim(),
-
       password: passwordController.text.trim(),
     );
 
@@ -62,13 +62,11 @@ class _LoginScreenState extends State<LoginScreen> {
       if (role == "Customer") {
         Navigator.pushReplacement(
           context,
-
           MaterialPageRoute(builder: (_) => const CustomerDashboard()),
         );
       } else {
         Navigator.pushReplacement(
           context,
-
           MaterialPageRoute(
             builder: (_) =>
                 ProviderDashboard(name: result["name"], role: result["role"]),
@@ -82,14 +80,141 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  // ==========================================
+  // FORGOT PASSWORD DIALOG FUNCTION
+  // ==========================================
+  void _showForgotPasswordDialog(BuildContext context) {
+    final TextEditingController resetEmailController = TextEditingController(
+      text: emailController.text.trim(),
+    );
+    final GlobalKey<FormState> resetFormKey = GlobalKey<FormState>();
+    bool isResetLoading = false;
+
+    showDialog(
+      context: context,
+      builder: (dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              title: const Text(
+                "Reset Password",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xffF57C00),
+                ),
+              ),
+              content: Form(
+                key: resetFormKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      "Enter your registered email address to receive a password reset link.",
+                      style: TextStyle(fontSize: 13, color: Colors.black87),
+                    ),
+                    const SizedBox(height: 15),
+                    TextFormField(
+                      controller: resetEmailController,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return "Please enter email";
+                        }
+                        if (!value.contains("@")) {
+                          return "Enter valid email";
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        prefixIcon: const Icon(
+                          Icons.email_outlined,
+                          color: Color(0xffF57C00),
+                        ),
+                        labelText: "Email Address",
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(dialogContext),
+                  child: const Text(
+                    "CANCEL",
+                    style: TextStyle(color: Colors.grey),
+                  ),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xffF57C00),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  onPressed: isResetLoading
+                      ? null
+                      : () async {
+                          if (!resetFormKey.currentState!.validate()) return;
+
+                          setDialogState(() {
+                            isResetLoading = true;
+                          });
+
+                          final result = await _authService
+                              .sendPasswordResetEmail(
+                                resetEmailController.text.trim(),
+                              );
+
+                          setDialogState(() {
+                            isResetLoading = false;
+                          });
+
+                          if (!mounted) return;
+                          Navigator.pop(dialogContext); // Close dialog
+
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(result["message"]),
+                              backgroundColor: result["success"] == true
+                                  ? Colors.green
+                                  : Colors.red,
+                            ),
+                          );
+                        },
+                  child: isResetLoading
+                      ? const SizedBox(
+                          height: 18,
+                          width: 18,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          "SEND LINK",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       resizeToAvoidBottomInset: true,
-
       body: Container(
         width: double.infinity,
-
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -97,27 +222,21 @@ class _LoginScreenState extends State<LoginScreen> {
             colors: [Color(0xffF57C00), Color(0xffFF9800), Color(0xffFFB74D)],
           ),
         ),
-
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
-
             child: Form(
               key: _formKey,
-
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
-
                 children: [
                   Align(
                     alignment: Alignment.topLeft,
-
                     child: IconButton(
                       icon: const Icon(
                         Icons.arrow_back_ios_new,
                         color: Colors.white,
                       ),
-
                       onPressed: () {
                         Navigator.pushReplacement(
                           context,
@@ -134,7 +253,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     height: 120,
                     width: 120,
-
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(30),
@@ -146,7 +264,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                       ],
                     ),
-
                     child: const Icon(
                       Icons.volunteer_activism,
                       size: 70,
@@ -176,19 +293,15 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   Container(
                     padding: const EdgeInsets.all(25),
-
                     decoration: BoxDecoration(
                       color: Colors.white,
                       borderRadius: BorderRadius.circular(30),
                     ),
-
                     child: Column(
                       children: [
                         TextFormField(
                           controller: emailController,
-
                           keyboardType: TextInputType.emailAddress,
-
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return "Please enter email";
@@ -200,15 +313,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
                             return null;
                           },
-
                           decoration: InputDecoration(
                             prefixIcon: const Icon(
                               Icons.email_outlined,
                               color: Color(0xffF57C00),
                             ),
-
                             labelText: "Email Address",
-
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(15),
                             ),
@@ -219,9 +329,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                         TextFormField(
                           controller: passwordController,
-
                           obscureText: isPasswordHidden,
-
                           validator: (value) {
                             if (value == null || value.isEmpty) {
                               return "Please enter password";
@@ -233,29 +341,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
                             return null;
                           },
-
                           decoration: InputDecoration(
                             prefixIcon: const Icon(
                               Icons.lock_outline,
                               color: Color(0xffF57C00),
                             ),
-
                             suffixIcon: IconButton(
                               icon: Icon(
                                 isPasswordHidden
                                     ? Icons.visibility_off
                                     : Icons.visibility,
                               ),
-
                               onPressed: () {
                                 setState(() {
                                   isPasswordHidden = !isPasswordHidden;
                                 });
                               },
                             ),
-
                             labelText: "Password",
-
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(15),
                             ),
@@ -275,7 +378,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                 });
                               },
                             ),
-                            // Wrap labels inside Flexible to dynamically resize
                             const Flexible(
                               child: Text(
                                 "Remember Me",
@@ -290,20 +392,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             Flexible(
                               child: TextButton(
                                 style: TextButton.styleFrom(
-                                  padding: EdgeInsets
-                                      .zero, // Removes extra button padding
+                                  padding: EdgeInsets.zero,
                                   minimumSize: const Size(0, 0),
                                   tapTargetSize:
                                       MaterialTapTargetSize.shrinkWrap,
                                 ),
                                 onPressed: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(
-                                      content: Text(
-                                        "Forgot Password screen coming soon.",
-                                      ),
-                                    ),
-                                  );
+                                  _showForgotPasswordDialog(context);
                                 },
                                 child: const Text(
                                   "Forgot Password?",
@@ -327,7 +422,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           height: 55,
                           child: ElevatedButton(
                             onPressed: isLoading ? null : login,
-
                             style: ElevatedButton.styleFrom(
                               backgroundColor: const Color(0xffF57C00),
                               shape: RoundedRectangleBorder(
@@ -335,7 +429,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                               elevation: 3,
                             ),
-
                             child: isLoading
                                 ? const SizedBox(
                                     height: 22,
@@ -402,7 +495,6 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 );
                               },
-
                               child: const Text(
                                 "Create Account",
                                 style: TextStyle(

@@ -85,6 +85,32 @@ class AuthService {
   }
 
   // ===========================
+  // RESET / FORGOT PASSWORD
+  // ===========================
+
+  Future<Map<String, dynamic>> sendPasswordResetEmail(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email.trim());
+      return {
+        "success": true,
+        "message": "Password reset link has been sent to $email",
+      };
+    } on FirebaseAuthException catch (e) {
+      String errorMessage = "An error occurred";
+      if (e.code == 'user-not-found') {
+        errorMessage = "No user registered with this email.";
+      } else if (e.code == 'invalid-email') {
+        errorMessage = "Please enter a valid email address.";
+      } else {
+        errorMessage = e.message ?? errorMessage;
+      }
+      return {"success": false, "message": errorMessage};
+    } catch (e) {
+      return {"success": false, "message": "Error: ${e.toString()}"};
+    }
+  }
+
+  // ===========================
   // LOGOUT
   // ===========================
 
