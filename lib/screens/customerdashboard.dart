@@ -317,7 +317,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                   Text(
                     currentUser == null
                         ? "Loading..."
-                        : "Good Evening,\n${currentUser!.fullName}",
+                        : "Good morning,\n${currentUser!.fullName}",
                     style: const TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
@@ -327,16 +327,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                   const SizedBox(height: 6),
                   const Text(
                     "Find Fresh Food Nearby",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 27,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 15),
-                  const Text(
-                    "Save Food • Save Money",
-                    style: TextStyle(color: Colors.white, fontSize: 15),
+                    style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 ],
               ),
