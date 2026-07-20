@@ -1,10 +1,10 @@
-# 🍽️ FRAD – Food Rescue and Donation App
+#  FRAD – Food Rescue and Donation App
 
 > **FRAD (Food Rescue and Donation App)** is a Flutter and Firebase based mobile application developed to reduce food waste by connecting food providers with customers who can reserve surplus food at discounted prices or receive donated food.
 
 ---
 
-## 📖 Project Overview
+##  Project Overview
 
 Every day, restaurants, bakeries, hostel messes, and event caterers have surplus food that often goes to waste. FRAD provides a platform where food providers can upload available surplus food, and customers can discover, reserve, and collect it before it expires.
 
@@ -18,9 +18,9 @@ The project aims to:
 
 ---
 
-# ✨ Features
+#  Features
 
-## 👤 Customer
+##  Customer
 
 * User Registration & Login
 * Browse Available Food
@@ -35,7 +35,7 @@ The project aims to:
 
 ---
 
-## 🏪 Provider
+##  Provider
 
 Supported Providers:
 
@@ -60,7 +60,7 @@ Provider Features:
 
 ---
 
-# 🛠 Technologies Used
+#  Technologies Used
 
 ### Frontend
 
@@ -82,7 +82,7 @@ Provider Features:
 
 ---
 
-# 📂 Project Structure
+#  Project Structure
 
 ```text
 lib/
@@ -117,7 +117,7 @@ lib/
 
 ---
 
-# 🗄 Firebase Collections
+# Firebase Collections
 
 ## users
 
@@ -191,7 +191,7 @@ readBy
 
 ---
 
-# 🔄 Application Flow
+#  Application Flow
 
 ```text
 Splash Screen
@@ -227,7 +227,7 @@ Orders      Update Status
 
 ---
 
-# 🔥 Main Modules
+#  Main Modules
 
 * Authentication
 * Role-Based Login
@@ -240,7 +240,7 @@ Orders      Update Status
 
 ---
 
-# 🎯 Future Enhancements
+#  Future Enhancements
 
 * Google Maps Integration
 * Live GPS Tracking
@@ -253,20 +253,20 @@ Orders      Update Status
 
 ---
 
-# 👨‍💻 Team Members
+#  Team Members
 
 * Momna Tariq
 * Malaika Khushal
 
 ---
 
-# 🎓 Academic Project
+#  Academic Project
 
 This project was developed as a Semester Project for the **Mobile Application Development** course using **Flutter** and **Firebase**.
 
 ---
 
-# 📷 Screens Included
+# Screens Included
 
 * Splash Screen
 * Landing Page
@@ -285,7 +285,7 @@ This project was developed as a Semester Project for the **Mobile Application De
 
 ---
 
-# 🚀 Getting Started
+#  Getting Started
 
 Clone the repository:
 
@@ -307,6 +307,6 @@ flutter run
 
 ---
 
-# 📄 License
+# License
 
 This project is developed for educational purposes only.
