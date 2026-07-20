@@ -26,11 +26,17 @@ class _ProviderQrScreenState extends State<ProviderQrScreen> {
   }
 
   Future<void> loadQr() async {
+    if (!mounted) return;
     setState(() {
       loading = true;
     });
     try {
-      qrUrl = await firestoreService.getProviderQr();
+      final fetchedUrl = await firestoreService.getProviderQr();
+      if (mounted) {
+        setState(() {
+          qrUrl = fetchedUrl;
+        });
+      }
     } catch (e) {
       debugPrint("Error loading QR: $e");
     } finally {
@@ -43,17 +49,24 @@ class _ProviderQrScreenState extends State<ProviderQrScreen> {
   }
 
   Future<void> pickImage() async {
-    final picker = ImagePicker();
-    final XFile? picked = await picker.pickImage(
-      source: ImageSource.gallery,
-      imageQuality: 85,
-    );
-    if (picked == null) return;
+    try {
+      final picker = ImagePicker();
+      final XFile? picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+      if (picked == null) return;
 
-    final bytes = await picked.readAsBytes();
-    setState(() {
-      imageBytes = bytes;
-    });
+      final bytes = await picked.readAsBytes();
+      setState(() {
+        imageBytes = bytes;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text("Error picking image: $e")));
+    }
   }
 
   Future<void> uploadQr() async {
@@ -69,22 +82,22 @@ class _ProviderQrScreenState extends State<ProviderQrScreen> {
     });
 
     try {
-      // Current user UID verification
       final userId = firestoreService.currentUser?.uid;
       if (userId == null) {
-        throw "User not authenticated";
+        throw "User not logged in. Please sign in again.";
       }
 
+      // 1. Storage me upload
       await firestoreService.uploadQrImageBytes(imageBytes!, userId);
 
-      // Fetch the newly uploaded URL
-      qrUrl = await firestoreService.getProviderQr();
+      // 2. Fresh QR URL retrieve karna
+      final newQrUrl = await firestoreService.getProviderQr();
 
       if (!mounted) return;
 
-      // Clear memory bytes so it now renders the uploaded Network image
       setState(() {
-        imageBytes = null;
+        qrUrl = newQrUrl;
+        imageBytes = null; // Memory clear karke network image switch
         loading = false;
       });
 
@@ -99,10 +112,13 @@ class _ProviderQrScreenState extends State<ProviderQrScreen> {
       setState(() {
         loading = false;
       });
+
+      // Shows exact error on screen
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Upload failed: $e"),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
         ),
       );
     }
@@ -219,11 +235,11 @@ class _ProviderQrScreenState extends State<ProviderQrScreen> {
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(color: Colors.orange.shade200),
               ),
-              child: Row(
+              child: const Row(
                 children: [
-                  const Icon(Icons.info_outline, color: Colors.orange),
-                  const SizedBox(width: 12),
-                  const Expanded(
+                  Icon(Icons.info_outline, color: Colors.orange),
+                  SizedBox(width: 12),
+                  Expanded(
                     child: Text(
                       "Upload EasyPaisa, JazzCash, or Bank QR. Customers will scan this to send payments.",
                       style: TextStyle(
@@ -245,10 +261,7 @@ class _ProviderQrScreenState extends State<ProviderQrScreen> {
   // Widget to display Preview / Existing QR / Placeholder
   Widget buildQrImageWidget() {
     if (imageBytes != null) {
-      return Image.memory(
-        imageBytes!,
-        fit: BoxFit.contain, // Shows full QR inside square frame
-      );
+      return Image.memory(imageBytes!, fit: BoxFit.contain);
     }
 
     if (qrUrl.isNotEmpty) {

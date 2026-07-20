@@ -16,31 +16,39 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
   final Color primaryColor = const Color(0xffF57C00);
   bool isLoading = false;
 
-  // Detail Tile Widget (Fixed: Responsive width to avoid layout issues)
+  // Detail Tile Widget (Fixed: Compact padding and proper flex to prevent pixel overflow)
   Widget detailTile(IconData icon, String title, String value) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.orange.shade50,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(icon, color: primaryColor),
-          const SizedBox(width: 10),
-          Flexible(
+          Icon(icon, color: primaryColor, size: 20),
+          const SizedBox(width: 8),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12,
+                    color: Colors.black87,
+                  ),
                 ),
-                const SizedBox(height: 4),
-                Text(value, overflow: TextOverflow.ellipsis, maxLines: 1),
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: const TextStyle(fontSize: 13, color: Colors.black),
+                ),
               ],
             ),
           ),
@@ -255,18 +263,18 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Padding(
-                      padding: const EdgeInsets.all(20),
+                      padding: const EdgeInsets.all(18),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             widget.food.foodName,
                             style: TextStyle(
-                              fontSize: desktop ? 30 : 24,
+                              fontSize: desktop ? 28 : 22,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 10),
                           Row(
                             children: [
                               Icon(Icons.store, color: primaryColor, size: 20),
@@ -274,21 +282,21 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                               Expanded(
                                 child: Text(
                                   widget.food.providerName,
-                                  style: const TextStyle(fontSize: 16),
+                                  style: const TextStyle(fontSize: 15),
                                 ),
                               ),
                             ],
                           ),
-                          const Divider(height: 30),
+                          const Divider(height: 25),
 
-                          // Grid/Wrap Layout for info
+                          // Grid Layout for info (Fixed AspectRatio & Spacing)
                           GridView.count(
                             shrinkWrap: true,
                             physics: const NeverScrollableScrollPhysics(),
                             crossAxisCount: desktop ? 3 : 2,
-                            childAspectRatio: 2.5,
-                            mainAxisSpacing: 10,
-                            crossAxisSpacing: 10,
+                            childAspectRatio: desktop ? 2.8 : 2.1,
+                            mainAxisSpacing: 8,
+                            crossAxisSpacing: 8,
                             children: [
                               detailTile(
                                 Icons.inventory_2,
@@ -307,10 +315,9 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 25),
+                          const SizedBox(height: 20),
                           Row(
                             children: [
-                              // Fixed Price Tag logic
                               Text(
                                 widget.food.donation ||
                                         widget.food.discountPrice == 0
@@ -323,7 +330,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                                       ? Colors.green
                                       : primaryColor,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: desktop ? 30 : 24,
+                                  fontSize: desktop ? 28 : 22,
                                 ),
                               ),
                               const SizedBox(width: 12),
@@ -357,7 +364,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                   // Description Container
                   Container(
                     width: double.infinity,
-                    margin: const EdgeInsets.only(top: 20),
+                    margin: const EdgeInsets.only(top: 15),
                     padding: const EdgeInsets.all(18),
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -375,25 +382,25 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                         const Text(
                           "Description",
                           style: TextStyle(
-                            fontSize: 18,
+                            fontSize: 17,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 8),
                         Text(
                           widget.food.description.isNotEmpty
                               ? widget.food.description
                               : "No description provided.",
                           style: const TextStyle(
-                            fontSize: 15,
+                            fontSize: 14,
                             color: Colors.black87,
-                            height: 1.5,
+                            height: 1.4,
                           ),
                         ),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 18),
 
                   // Pickup Info Container
                   Container(
@@ -436,7 +443,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                   // Reserve Button Block
                   SizedBox(
                     width: double.infinity,
-                    height: 55,
+                    height: 52,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: primaryColor,
@@ -465,7 +472,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 25),
                 ],
               ),
             );
